@@ -10,6 +10,7 @@ export type SlashCommandKind =
   | "continue"
   | "mcp"
   | "raw"
+  | "rewind"
   | "exit";
 
 export type SlashCommandItem = {
@@ -70,6 +71,12 @@ export const BUILTIN_SLASH_COMMANDS: SlashCommandItem[] = [
     label: "/raw",
     args: ["lite", "normal", "raw-scrollback"],
     description: "Toggle display mode for viewing or collapsing reasoning content",
+  },
+  {
+    kind: "rewind",
+    name: "rewind",
+    label: "/rewind",
+    description: "Jump back to a specific message and restart the conversation",
   },
   {
     kind: "exit",

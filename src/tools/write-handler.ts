@@ -97,6 +97,15 @@ export async function handleWriteTool(
         const encoding = existingMetadata?.encoding ?? "utf8";
         const lineEndings = existingMetadata?.lineEndings ?? (input.content.includes("\r\n") ? "CRLF" : "LF");
         const diffPreview = buildDiffPreview(filePath, existingMetadata?.content ?? null, normalizedContent);
+
+        // Notify file change tracker before writing
+        context.onFileChange?.({
+          type: existingFile ? "modify" : "create",
+          filePath,
+          previousContent: existingMetadata?.content ?? null,
+          previousExists: existingFile,
+        });
+
         const bytes = writeTextFile(filePath, normalizedContent, encoding, lineEndings);
         const freshMetadata = readTextFileWithMetadata(filePath);
 

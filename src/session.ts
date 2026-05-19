@@ -28,6 +28,7 @@ import type { McpServerConfig } from "./settings";
 import { logApiError } from "./common/error-logger";
 import { logOpenAIChatCompletionDebug, normalizeDebugError } from "./common/debug-logger";
 import { killProcessTree } from "./common/process-tree";
+import { FileChangeTracker, type FileChange } from "./common/file-change-tracker";
 
 const MAX_SESSION_ENTRIES = 50;
 const DEFAULT_NEW_PROMPT_API_URL = "https://deepcode.vegamo.cn/api/plugin/new";
@@ -258,6 +259,9 @@ export class SessionManager {
   private readonly toolExecutor: ToolExecutor;
   private readonly mcpManager = new McpManager();
   private mcpToolDefinitions: ToolDefinition[] = [];
+  private readonly fileChangeTracker = new FileChangeTracker();
+  private readonly pendingFileChanges = new Map<string, FileChange[]>();
+  private readonly pendingUntrackableCommands = new Map<string, string[]>();
 
   constructor(options: SessionManagerOptions) {
     this.projectRoot = options.projectRoot;
@@ -1790,11 +1794,25 @@ ${skillMd}
   }
 
   private async appendToolMessages(sessionId: string, toolCalls: unknown[]): Promise<{ waitingForUser: boolean }> {
+    // Clear pending file changes before execution
+    this.pendingFileChanges.clear();
+    this.pendingUntrackableCommands.clear();
+
     const toolExecutions = await this.toolExecutor.executeToolCalls(sessionId, toolCalls, {
       onProcessStart: (pid, command) => this.addSessionProcess(sessionId, pid, command),
       onProcessExit: (pid) => this.removeSessionProcess(sessionId, pid),
       onProcessStdout: (pid, chunk) => this.onProcessStdout?.(Number(pid), chunk),
       onProcessTimeoutControl: (pid, control) => this.setSessionProcessTimeoutControl(sessionId, pid, control),
+      onFileChange: (change) => {
+        const pending = this.pendingFileChanges.get(change.filePath) ?? [];
+        pending.push(change);
+        this.pendingFileChanges.set(change.filePath, pending);
+      },
+      onUntrackableBashCommand: (command, reason) => {
+        const pending = this.pendingUntrackableCommands.get(command) ?? [];
+        pending.push(reason);
+        this.pendingUntrackableCommands.set(command, pending);
+      },
       shouldStop: () => this.isInterrupted(sessionId),
     });
     if (this.isInterrupted(sessionId)) {
@@ -1811,6 +1829,9 @@ ${skillMd}
       this.appendSessionMessage(sessionId, toolMessage);
       this.onAssistantMessage(toolMessage, true);
 
+      // Record file changes with the correct messageId
+      this.flushPendingFileChanges(toolMessage.id, execution.toolCallId, execution.result.name);
+
       for (const followUpMessage of execution.result.followUpMessages ?? []) {
         if (followUpMessage.role !== "system") {
           continue;
@@ -1825,6 +1846,103 @@ ${skillMd}
       this.appendSessionMessage(sessionId, followUpMessage);
     }
     return { waitingForUser };
+  }
+
+  /**
+   * Transfer buffered file changes from pendingFileChanges to fileChangeTracker,
+   * now that we have the real messageId and toolCallId.
+   */
+  private flushPendingFileChanges(messageId: string, toolCallId: string, toolName: string): void {
+    if (this.pendingFileChanges.size === 0 && this.pendingUntrackableCommands.size === 0) {
+      return;
+    }
+    for (const change of this.pendingFileChanges.values()) {
+      for (const singleChange of change) {
+        this.fileChangeTracker.recordChange(messageId, toolCallId, toolName, singleChange);
+      }
+    }
+    for (const [command, reasons] of this.pendingUntrackableCommands) {
+      for (const reason of reasons) {
+        this.fileChangeTracker.recordUntrackableCommand(messageId, toolCallId, command, reason);
+      }
+    }
+    this.pendingFileChanges.clear();
+    this.pendingUntrackableCommands.clear();
+  }
+
+  /**
+   * Return messages eligible for rewind: visible user or assistant messages
+   * (excluding the very last message in the session).
+   */
+  getRewindableMessages(sessionId: string): SessionMessage[] {
+    const messages = this.listSessionMessages(sessionId);
+    if (messages.length === 0) {
+      return [];
+    }
+    // Exclude the last message so you can't rewind to the end of the conversation.
+    const candidates = messages.slice(0, -1);
+    return candidates.filter((m) => m.visible && (m.role === "user" || m.role === "assistant"));
+  }
+
+  /**
+   * Rewind the conversation to the given message (inclusive).
+   * All messages after the target are removed and any file changes
+   * caused by those messages are rolled back.
+   *
+   * @returns An object with `success` and an array of `warnings`.
+   */
+  rewindToMessage(sessionId: string, targetMessageId: string): { success: boolean; warnings: string[] } {
+    const messages = this.listSessionMessages(sessionId);
+    const targetIndex = messages.findIndex((m) => m.id === targetMessageId);
+
+    if (targetIndex === -1) {
+      return { success: false, warnings: [] };
+    }
+
+    // Keep target message and everything before it.
+    const keptMessages = messages.slice(0, targetIndex + 1);
+    this.saveSessionMessages(sessionId, keptMessages);
+
+    // Roll back file system changes caused by removed messages.
+    const fileWarnings = this.rollbackFileSystem(targetIndex, messages);
+
+    // Collect warnings from untrackable bash commands in removed messages.
+    const untrackedCommands = this.fileChangeTracker.getUntrackableCommandsAfter(targetIndex, messages);
+    const bashWarnings: string[] = [];
+    for (const cmd of untrackedCommands) {
+      bashWarnings.push(`Untrackable bash operation: "${cmd.command}" — ${cmd.reason}`);
+    }
+
+    // Clear leftover file change records for the removed messages.
+    // The fileChangeTracker.rollback already consumed the changes,
+    // but we should clear any remaining references.
+    this.fileChangeTracker.clear();
+
+    // Update session metadata.
+    this.updateSessionEntry(sessionId, (entry) => ({
+      ...entry,
+      status: "completed" as const,
+      failReason: null,
+      toolCalls: null,
+      assistantReply: null,
+      assistantThinking: null,
+      updateTime: new Date().toISOString(),
+    }));
+
+    return { success: true, warnings: [...fileWarnings, ...bashWarnings] };
+  }
+
+  /**
+   * Roll back file system changes for all messages after the target index.
+   * Changes are undone in reverse chronological order so that the latest
+   * modification to a file is undone first.
+   */
+  private rollbackFileSystem(targetIndex: number, messages: SessionMessage[]): string[] {
+    const changesToRollback = this.fileChangeTracker.getChangesAfter(targetIndex, messages);
+    if (changesToRollback.length === 0) {
+      return [];
+    }
+    return this.fileChangeTracker.rollback(changesToRollback, this.projectRoot);
   }
 
   private buildOpenAIMessages(

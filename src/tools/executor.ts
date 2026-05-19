@@ -1,5 +1,6 @@
 import type OpenAI from "openai";
 import type { ReasoningEffort } from "../settings";
+import type { FileChange } from "../common/file-change-tracker";
 import { handleAskUserQuestionTool } from "./ask-user-question-handler";
 import { handleBashTool } from "./bash-handler";
 import { handleEditTool } from "./edit-handler";
@@ -40,6 +41,8 @@ export type ToolExecutionContext = {
   onProcessExit?: (processId: string | number) => void;
   onProcessStdout?: (processId: string | number, chunk: string) => void;
   onProcessTimeoutControl?: (processId: string | number, control: ProcessTimeoutControl | null) => void;
+  onFileChange?: (change: FileChange) => void;
+  onUntrackableBashCommand?: (command: string, reason: string) => void;
   bashTimeoutMs?: number;
   bashMinTimeoutMs?: number;
 };
@@ -49,6 +52,8 @@ export type ToolExecutionHooks = {
   onProcessExit?: (processId: string | number) => void;
   onProcessStdout?: (processId: string | number, chunk: string) => void;
   onProcessTimeoutControl?: (processId: string | number, control: ProcessTimeoutControl | null) => void;
+  onFileChange?: (change: FileChange) => void;
+  onUntrackableBashCommand?: (command: string, reason: string) => void;
   shouldStop?: () => boolean;
 };
 
@@ -217,6 +222,8 @@ export class ToolExecutor {
         onProcessExit: hooks?.onProcessExit,
         onProcessStdout: hooks?.onProcessStdout,
         onProcessTimeoutControl: hooks?.onProcessTimeoutControl,
+        onFileChange: hooks?.onFileChange,
+        onUntrackableBashCommand: hooks?.onUntrackableBashCommand,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

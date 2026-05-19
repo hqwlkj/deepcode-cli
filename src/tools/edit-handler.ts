@@ -207,6 +207,7 @@ export async function handleEditTool(
       try {
         const metadata = readTextFileWithMetadata(filePath);
         const raw = metadata.content;
+        const snapshotContent = raw;
         const oldString = input.old_string;
         const newString = input.new_string;
         const replaceAll = input.replace_all ?? false;
@@ -318,6 +319,14 @@ export async function handleEditTool(
             },
           };
         }
+
+        // Notify file change tracker before modifying
+        context.onFileChange?.({
+          type: "modify",
+          filePath,
+          previousContent: snapshotContent,
+          previousExists: true,
+        });
 
         const updated = applyReplacement(raw, replacementOldString, replacementNewString, matches, replaceAll);
         const diffPreview = buildDiffPreview(filePath, raw, updated);

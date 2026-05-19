@@ -25,6 +25,7 @@ import {
 import { PromptInput, type PromptSubmission } from "./PromptInput";
 import { MessageView, RawModeExitPrompt } from "./compoments";
 import { SessionList } from "./SessionList";
+import { RewindMessageList } from "./RewindMessageList";
 import { buildLoadingText } from "./loadingText";
 import { findExpandedThinkingId } from "./thinkingState";
 import { WelcomeScreen } from "./WelcomeScreen";
@@ -43,7 +44,7 @@ import { renderMessageToStdout } from "./compoments/MessageView/utils";
 const DEFAULT_MODEL = "deepseek-v4-pro";
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
 
-type View = "chat" | "session-list" | "mcp-status";
+type View = "chat" | "session-list" | "mcp-status" | "rewind-list";
 
 type AppProps = {
   projectRoot: string;
@@ -76,6 +77,7 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
   const [isExiting, setIsExiting] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeNonce, setWelcomeNonce] = useState(0);
+  const [rewindMessages, setRewindMessages] = useState<SessionMessage[]>([]);
   const [resolvedSettings, setResolvedSettings] = useState(() => resolveCurrentSettings(projectRoot));
   const [nowTick, setNowTick] = useState(0);
   const [mcpStatuses, setMcpStatuses] = useState<ReturnType<typeof sessionManager.getMcpStatus>>([]);
@@ -227,6 +229,46 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
         setShowWelcome(false);
         setMcpStatuses(sessionManager.getMcpStatus());
         setView("mcp-status");
+        return;
+      }
+      if (submission.command === "rewind") {
+        const activeSessionId = sessionManager.getActiveSessionId();
+        if (!activeSessionId) {
+          setErrorLine("No active session to rewind");
+          return;
+        }
+        if (submission.rewindTargetId) {
+          const result = sessionManager.rewindToMessage(activeSessionId, submission.rewindTargetId);
+          if (!result.success) {
+            setErrorLine("Failed to rewind: target message not found");
+            return;
+          }
+          // Clear first so <Static> resets its index to 0 (matching handleSelectSession pattern).
+          setMessages([]);
+          setShowWelcome(false);
+          setWelcomeNonce((n) => n + 1);
+          setView("chat");
+          const session = sessionManager.getSession(activeSessionId);
+          setStatusLine(session ? buildStatusLine(session) : "");
+          setRunningProcesses(null);
+          setActiveStatus(session?.status ?? null);
+          setStreamProgress(null);
+          if (result.warnings.length > 0) {
+            setErrorLine(`Rewound with warnings: ${result.warnings.join("; ")}`);
+          } else {
+            setErrorLine(null);
+          }
+          // Load messages after the reset so all static items are rendered.
+          setTimeout(() => {
+            setMessages(loadVisibleMessages(sessionManager, activeSessionId));
+          }, 0);
+          return;
+        }
+        // Show the rewind message selector.
+        const candidates = sessionManager.getRewindableMessages(activeSessionId);
+        setRewindMessages(candidates);
+        setShowWelcome(false);
+        setView("rewind-list");
         return;
       }
 
@@ -523,6 +565,18 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
     [handlePrompt]
   );
 
+  const handleRewindSelect = useCallback(
+    (targetMessageId: string) => {
+      void handlePrompt({
+        text: "/rewind",
+        imageUrls: [],
+        command: "rewind",
+        rewindTargetId: targetMessageId,
+      });
+    },
+    [handlePrompt]
+  );
+
   const handleQuestionCancel = useCallback(() => {
     if (!pendingQuestion) {
       return;
@@ -586,6 +640,8 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
         />
       ) : view === "mcp-status" ? (
         <McpStatusList statuses={mcpStatuses} onCancel={() => setView("chat")} />
+      ) : view === "rewind-list" ? (
+        <RewindMessageList messages={rewindMessages} onSelect={handleRewindSelect} onCancel={() => setView("chat")} />
       ) : shouldShowQuestionPrompt && pendingQuestion && !busy ? (
         <AskUserQuestionPrompt
           questions={pendingQuestion.questions}

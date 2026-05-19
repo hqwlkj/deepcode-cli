@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import { spawn } from "child_process";
 import { DEFAULT_BASH_TIMEOUT_MS, clampBashTimeoutMs } from "../common/bash-timeout";
 import { killProcessTree } from "../common/process-tree";
@@ -44,6 +46,14 @@ export async function handleBashTool(
 
   const startCwd = getSessionCwd(context.sessionId, context.projectRoot);
   const { shellPath, shellArgs, marker } = buildShellCommand(command);
+
+  // Track file changes BEFORE execution to capture correct pre-bash file state.
+  // Must happen before executeShellCommand because destructive commands (rm, mv)
+  // would remove or rename files before we can capture their content.
+  const bashWarning = trackBashFileChanges(command, startCwd, context);
+  if (bashWarning) {
+    context.onUntrackableBashCommand?.(command, bashWarning);
+  }
 
   const execution = await executeShellCommand(shellPath, shellArgs, startCwd, command, context);
   const result = buildToolCommandResult(
@@ -327,6 +337,200 @@ function buildErrorMessage(exitCode: number | null, signal: string | null, error
     return `Command failed with exit code ${exitCode}.`;
   }
   return "Command failed.";
+}
+
+/**
+ * Detect and track common file operations in a bash command for /rewind rollback.
+ * Handles: rm, mv, touch, cp. File paths are resolved against the working directory.
+ *
+ * @returns A warning string if the command is untrackable (e.g. package installation),
+ *          or null if tracking succeeded or the command is benign.
+ */
+function trackBashFileChanges(command: string, cwd: string, context: ToolExecutionContext): string | null {
+  if (!context.onFileChange) {
+    return null;
+  }
+
+  const trimmed = command.trim();
+
+  // rm <files...>
+  const rmMatch = trimmed.match(/^rm\s+(?:-r?f?\s+)*(.+)$/);
+  if (rmMatch) {
+    const fileParts = rmMatch[1].split(/\s+/);
+    for (const part of fileParts) {
+      const cleanPart = part.replace(/["']/g, "").trim();
+      if (!cleanPart) continue;
+      const absPath = resolvePath(cleanPart, cwd);
+      if (!absPath) continue;
+      const exists = fs.existsSync(absPath);
+      context.onFileChange!({
+        type: "delete",
+        filePath: absPath,
+        previousContent: exists ? tryReadFile(absPath) : null,
+        previousExists: exists,
+      });
+    }
+    return null;
+  }
+
+  // mv <source> <dest>
+  const mvMatch = trimmed.match(/^mv\s+(?:-[a-zA-Z]*\s+)*([^\s]+)\s+([^\s]+)$/);
+  if (mvMatch) {
+    const source = mvMatch[1].replace(/["']/g, "").trim();
+    const dest = mvMatch[2].replace(/["']/g, "").trim();
+    const sourcePath = resolvePath(source, cwd);
+    const destPath = resolvePath(dest, cwd);
+    if (sourcePath) {
+      const sourceExisted = fs.existsSync(sourcePath);
+      context.onFileChange!({
+        type: "delete",
+        filePath: sourcePath,
+        previousContent: sourceExisted ? tryReadFile(sourcePath) : null,
+        previousExists: sourceExisted,
+      });
+    }
+    if (destPath) {
+      const destExisted = fs.existsSync(destPath);
+      context.onFileChange!({
+        type: destExisted ? "modify" : "create",
+        filePath: destPath,
+        previousContent: destExisted ? tryReadFile(destPath) : null,
+        previousExists: destExisted,
+      });
+    }
+    return null;
+  }
+
+  // touch <files...>
+  const touchMatch = trimmed.match(/^touch\s+(.+)$/);
+  if (touchMatch) {
+    const fileParts = touchMatch[1].split(/\s+/);
+    for (const part of fileParts) {
+      const cleanPart = part.replace(/["']/g, "").trim();
+      if (!cleanPart) continue;
+      const absPath = resolvePath(cleanPart, cwd);
+      if (!absPath) continue;
+      const existed = fs.existsSync(absPath);
+      context.onFileChange!({
+        type: existed ? "modify" : "create",
+        filePath: absPath,
+        previousContent: existed ? tryReadFile(absPath) : null,
+        previousExists: existed,
+      });
+    }
+    return null;
+  }
+
+  // cp <source> <dest>
+  const cpMatch = trimmed.match(/^cp\s+(?:-[a-zA-Z]*\s+)*([^\s]+)\s+([^\s]+)$/);
+  if (cpMatch) {
+    const dest = cpMatch[2].replace(/["']/g, "").trim();
+    const destPath = resolvePath(dest, cwd);
+    if (destPath) {
+      const destExisted = fs.existsSync(destPath);
+      context.onFileChange!({
+        type: destExisted ? "modify" : "create",
+        filePath: destPath,
+        previousContent: destExisted ? tryReadFile(destPath) : null,
+        previousExists: destExisted,
+      });
+    }
+    return null;
+  }
+
+  // Check if the command is an untrackable operation and return a warning.
+  return classifyUntrackable(trimmed);
+}
+
+/**
+ * Classify a bash command that doesn't match known file-operation patterns.
+ * Returns a human-readable warning if the command is an untrackable operation
+ * (e.g. package installation, service management), or null if benign.
+ */
+function classifyUntrackable(command: string): string | null {
+  const firstWord = command.split(/\s+/)[0] ?? "";
+  const lowerCmd = command.toLowerCase();
+
+  // Package managers — install/remove/uninstall operations
+  const pkgManagers: Array<{ pattern: RegExp; label: string }> = [
+    {
+      pattern: /\bapt(?:-get)?\s+(?:install|remove|purge|upgrade|dist-upgrade|full-upgrade)\b/,
+      label: "apt install/remove",
+    },
+    {
+      pattern: /\bnpm\s+(?:install|uninstall|update|add|remove)\s+(?:-[gs]\s+)?(?!.*--save-dev\b)/,
+      label: "npm install (global)",
+    },
+    { pattern: /\byarn\s+(?:global\s+)?(?:add|remove|upgrade)\b/, label: "yarn add/remove" },
+    { pattern: /\bpnpm\s+(?:add|remove|install|update)\b/, label: "pnpm add/remove" },
+    { pattern: /\bpip\d*\s+(?:install|uninstall)\b/, label: "pip install/uninstall" },
+    { pattern: /\bpipenv\s+install\b/, label: "pipenv install" },
+    { pattern: /\bbrew\s+(?:install|uninstall|upgrade|reinstall)\b/, label: "brew install/uninstall" },
+    { pattern: /\byum\s+(?:install|remove|update|upgrade)\b/, label: "yum install/remove" },
+    { pattern: /\bdnf\s+(?:install|remove|update|upgrade)\b/, label: "dnf install/remove" },
+    { pattern: /\bpacman\s+(?:-[A-Za-z]*S|[A-Za-z]*R)\b/, label: "pacman install/remove" },
+    { pattern: /\bzypper\s+(?:install|remove|update)\b/, label: "zypper install/remove" },
+    { pattern: /\bchoco\s+(?:install|uninstall|upgrade)\b/, label: "choco install/uninstall" },
+    { pattern: /\bcomposer\s+(?:global\s+)?(?:require|install|update|remove)\b/, label: "composer require/install" },
+    { pattern: /\bgem\s+install\b/, label: "gem install" },
+    { pattern: /\bcargo\s+install\b/, label: "cargo install" },
+    { pattern: /\bgo\s+(?:get|install)\b/, label: "go get/install" },
+    { pattern: /\bflatpak\s+install\b/, label: "flatpak install" },
+    { pattern: /\bsnap\s+install\b/, label: "snap install" },
+    { pattern: /\bwinget\s+install\b/, label: "winget install" },
+  ];
+
+  for (const { pattern, label } of pkgManagers) {
+    if (pattern.test(lowerCmd)) {
+      return `Package installation/removal (${label}) cannot be automatically rolled back`;
+    }
+  }
+
+  // Service / daemon management
+  if (/\b(systemctl|service|launchctl|rc-service|sv|chkconfig|update-rc\.d)\s+/.test(lowerCmd)) {
+    return `Service/daemon management (${firstWord}) cannot be automatically rolled back`;
+  }
+
+  // Database operations
+  if (
+    /\b(mysql|psql|mongo|mongosh|redis-cli|sqlite3)\s+/.test(lowerCmd) &&
+    !/\b(mysql|psql|mongo|mongosh|redis-cli|sqlite3)\s+--version\b/.test(lowerCmd)
+  ) {
+    return `Database operation (${firstWord}) cannot be automatically rolled back`;
+  }
+
+  // Docker operations that modify system state
+  if (/\bdocker\s+(run|pull|build|push|rmi|compose\s+(?:up|down|build|pull))\b/.test(lowerCmd)) {
+    return `Docker operation (${firstWord}) cannot be automatically rolled back`;
+  }
+
+  // Running scripts or remote scripts
+  if (
+    /\b(curl|wget)\s+.*\|\s*(?:bash|sh|zsh)\b/.test(lowerCmd) ||
+    /\b(curl|wget)\s+.*\|\s*(?:sudo\s+)?(?:bash|sh|zsh)\b/.test(lowerCmd)
+  ) {
+    return `Remote script execution (${firstWord} | sh) cannot be automatically rolled back`;
+  }
+
+  return null;
+}
+
+function resolvePath(fileSpec: string, cwd: string): string | null {
+  if (!fileSpec) return null;
+  // Skip glob patterns
+  if (fileSpec.includes("*") || fileSpec.includes("?")) return null;
+  if (path.isAbsolute(fileSpec)) return fileSpec;
+  return path.join(cwd, fileSpec);
+}
+
+function tryReadFile(filePath: string): string | null {
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.size > 1_000_000) return null; // Skip large files
+    return fs.readFileSync(filePath, "utf8");
+  } catch {
+    return null;
+  }
 }
 
 function formatResult(result: ToolCommandResult, name: string, errorMessage?: string): ToolExecutionResult {
