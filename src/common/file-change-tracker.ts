@@ -30,6 +30,14 @@ export type UntrackableCommand = {
 
 const MAX_FILE_CONTENT_SIZE = 1_000_000; // 1 MB
 
+/** JSON shape persisted to disk. */
+export type FileChangeTrackerData = {
+  version: 1;
+  sessionId: string;
+  changes: FileChangeRecord[];
+  untrackableCommands: UntrackableCommand[];
+};
+
 /**
  * Tracks file changes across tool executions within a session,
  * enabling rollback of file system state during /rewind.
@@ -255,6 +263,36 @@ export class FileChangeTracker {
   clear(): void {
     this.changes.length = 0;
     this.untrackableCommands.length = 0;
+  }
+
+  // -------------------------------------------------------------------
+  // Persistence helpers
+  // -------------------------------------------------------------------
+
+  /** Serialize current state for disk persistence. */
+  toJSON(sessionId: string): FileChangeTrackerData {
+    return {
+      version: 1,
+      sessionId,
+      changes: this.changes,
+      untrackableCommands: this.untrackableCommands,
+    };
+  }
+
+  /** Restore state from previously serialized data, replacing current state. */
+  loadFromJSON(data: FileChangeTrackerData): void {
+    this.changes.length = 0;
+    this.untrackableCommands.length = 0;
+    if (Array.isArray(data.changes)) {
+      for (const record of data.changes) {
+        this.changes.push(record);
+      }
+    }
+    if (Array.isArray(data.untrackableCommands)) {
+      for (const cmd of data.untrackableCommands) {
+        this.untrackableCommands.push(cmd);
+      }
+    }
   }
 }
 

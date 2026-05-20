@@ -6,6 +6,7 @@ import * as path from "path";
 import { execSync } from "child_process";
 import { SessionManager, type SessionMessage } from "../session";
 import { FileChangeTracker } from "../common/file-change-tracker";
+import type { FileChangeTrackerData } from "../common/file-change-tracker";
 
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
@@ -1059,4 +1060,160 @@ test("recordChange deduplicates multiple changes to the same file within a singl
   const singleRecord = changes[0]!;
   assert.equal(singleRecord.changes.length, 1);
   assert.equal(singleRecord.changes[0]!.previousContent, originalContent, "should keep the first previousContent");
+});
+
+// --- Persistence round-trip tests ---
+
+test("FileChangeTracker.toJSON() and loadFromJSON() round-trip preserves all data", () => {
+  const tracker = new FileChangeTracker();
+
+  // Record a file change
+  tracker.recordChange("msg-1", "call-1", "write", {
+    type: "create",
+    filePath: "/tmp/test.js",
+    previousContent: null,
+    previousExists: false,
+  });
+
+  // Record another change
+  tracker.recordChange("msg-2", "call-2", "edit", {
+    type: "modify",
+    filePath: "/tmp/test.js",
+    previousContent: "old content",
+    previousExists: true,
+  });
+
+  // Record an untrackable command
+  tracker.recordUntrackableCommand("msg-3", "call-3", "apt-get install nginx", "system package");
+
+  // Serialize
+  const data = tracker.toJSON("session-123");
+  assert.equal(data.version, 1);
+  assert.equal(data.sessionId, "session-123");
+  assert.equal(data.changes.length, 2);
+  assert.equal(data.untrackableCommands.length, 1);
+
+  // Create a new tracker and load
+  const tracker2 = new FileChangeTracker();
+  tracker2.loadFromJSON(data);
+
+  // Verify changes are restored
+  const changesAfter = tracker2.getChangesAfter(-1, [{ id: "msg-1" }, { id: "msg-2" }]);
+  assert.equal(changesAfter.length, 2);
+  assert.equal(changesAfter[0]!.changes[0]!.filePath, "/tmp/test.js");
+  assert.equal(changesAfter[0]!.changes[0]!.type, "create");
+  assert.equal(changesAfter[1]!.changes[0]!.type, "modify");
+  assert.equal(changesAfter[1]!.changes[0]!.previousContent, "old content");
+
+  // Verify untrackable commands are restored
+  const untracked = tracker2.getUntrackableCommandsAfter(-1, [{ id: "msg-1" }, { id: "msg-2" }, { id: "msg-3" }]);
+  assert.equal(untracked.length, 1);
+  assert.equal(untracked[0]!.command, "apt-get install nginx");
+});
+
+test("SessionManager persists and loads file changes from disk", () => {
+  const homeDir = createTempDir("deepcode-test-persist-home-");
+  const projectDir = createTempDir("deepcode-test-persist-project-");
+  setHomeDir(homeDir);
+
+  const filePath = path.join(projectDir, "test-persist.ts");
+  const fileContent = "// original content\n";
+  fs.writeFileSync(filePath, fileContent, "utf8");
+
+  const sessionId = "test-session-persist";
+  const now = new Date().toISOString();
+
+  // --- Phase 1: Create SessionManager, record changes, save to disk ---
+  const manager1 = new SessionManager({
+    projectRoot: projectDir,
+    createOpenAIClient: () => ({
+      client: null,
+      model: "test-model",
+      thinkingEnabled: false,
+    }),
+    getResolvedSettings: () => ({ model: "test-model" }),
+    renderMarkdown: (text) => text,
+    onAssistantMessage: () => {},
+  });
+
+  const tracker1 = (manager1 as any).fileChangeTracker as FileChangeTracker;
+
+  // Simulate a tool change
+  tracker1.recordChange("tool-msg", "call-write", "write", {
+    type: "modify",
+    filePath,
+    previousContent: fileContent,
+    previousExists: true,
+  });
+
+  // Save to disk
+  (manager1 as any).saveFileChanges(sessionId);
+
+  // --- Phase 2: Create a NEW SessionManager instance (simulating restart) and load from disk ---
+  const manager2 = new SessionManager({
+    projectRoot: projectDir,
+    createOpenAIClient: () => ({
+      client: null,
+      model: "test-model",
+      thinkingEnabled: false,
+    }),
+    getResolvedSettings: () => ({ model: "test-model" }),
+    renderMarkdown: (text) => text,
+    onAssistantMessage: () => {},
+  });
+
+  const tracker2 = (manager2 as any).fileChangeTracker as FileChangeTracker;
+
+  // Verify tracker is empty before loading
+  assert.equal(tracker2.getChangesAfter(-1, [{ id: "tool-msg" }]).length, 0, "tracker should be empty before load");
+
+  // Load from disk
+  (manager2 as any).loadFileChanges(sessionId);
+
+  // Verify the change is restored
+  const loadedChanges = tracker2.getChangesAfter(-1, [{ id: "tool-msg" }]);
+  assert.equal(loadedChanges.length, 1, "should have one change after load");
+  assert.equal(loadedChanges[0]!.changes[0]!.filePath, filePath);
+  assert.equal(loadedChanges[0]!.changes[0]!.type, "modify");
+  assert.equal(loadedChanges[0]!.changes[0]!.previousContent, fileContent);
+});
+
+test("removeFileChanges deletes persisted file from disk", () => {
+  const homeDir = createTempDir("deepcode-test-remove-home-");
+  const projectDir = createTempDir("deepcode-test-remove-project-");
+  setHomeDir(homeDir);
+
+  const sessionId = "test-session-remove";
+
+  const manager = new SessionManager({
+    projectRoot: projectDir,
+    createOpenAIClient: () => ({
+      client: null,
+      model: "test-model",
+      thinkingEnabled: false,
+    }),
+    getResolvedSettings: () => ({ model: "test-model" }),
+    renderMarkdown: (text) => text,
+    onAssistantMessage: () => {},
+  });
+
+  // Save some changes
+  const tracker = (manager as any).fileChangeTracker as FileChangeTracker;
+  tracker.recordChange("msg-1", "call-1", "write", {
+    type: "create",
+    filePath: path.join(projectDir, "foo.ts"),
+    previousContent: null,
+    previousExists: false,
+  });
+  (manager as any).saveFileChanges(sessionId);
+
+  // Verify file exists
+  const fileChangesPath = (manager as any).getFileChangesPath(sessionId) as string;
+  assert.equal(fs.existsSync(fileChangesPath), true, "file changes JSON should exist after save");
+
+  // Remove
+  (manager as any).removeFileChanges([sessionId]);
+
+  // Verify file is gone
+  assert.equal(fs.existsSync(fileChangesPath), false, "file changes JSON should be deleted after remove");
 });

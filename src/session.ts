@@ -29,6 +29,7 @@ import { logApiError } from "./common/error-logger";
 import { logOpenAIChatCompletionDebug, normalizeDebugError } from "./common/debug-logger";
 import { killProcessTree } from "./common/process-tree";
 import { FileChangeTracker, type FileChange } from "./common/file-change-tracker";
+import type { FileChangeTrackerData } from "./common/file-change-tracker";
 
 const MAX_SESSION_ENTRIES = 50;
 const DEFAULT_NEW_PROMPT_API_URL = "https://deepcode.vegamo.cn/api/plugin/new";
@@ -1059,6 +1060,10 @@ ${skillMd}
 
   async activateSession(sessionId: string, controller?: AbortController): Promise<void> {
     const startedAt = Date.now();
+
+    // Restore file change history from disk so /rewind works across CLI restarts.
+    this.loadFileChanges(sessionId);
+
     const { client, model, baseURL, thinkingEnabled, reasoningEffort, debugLogEnabled, notify, env } =
       this.createOpenAIClient();
     const now = new Date().toISOString();
@@ -1571,6 +1576,11 @@ ${skillMd}
     return path.join(projectDir, `${sessionId}.jsonl`);
   }
 
+  private getFileChangesPath(sessionId: string): string {
+    const { projectDir } = this.getProjectStorage();
+    return path.join(projectDir, `${sessionId}-file-changes.json`);
+  }
+
   private removeSessionMessages(sessionIds: string[]): void {
     for (const sessionId of sessionIds) {
       const messagePath = this.getSessionMessagesPath(sessionId);
@@ -1582,6 +1592,7 @@ ${skillMd}
         // ignore delete failures
       }
     }
+    this.removeFileChanges(sessionIds);
   }
 
   private appendSessionMessage(sessionId: string, message: SessionMessage): void {
@@ -1595,6 +1606,45 @@ ${skillMd}
     const messagePath = this.getSessionMessagesPath(sessionId);
     const payload = messages.map((message) => JSON.stringify(message)).join("\n");
     fs.writeFileSync(messagePath, payload ? `${payload}\n` : "", "utf8");
+  }
+
+  /** Persist file change tracker state to disk so /rewind works across CLI restarts. */
+  private saveFileChanges(sessionId: string): void {
+    this.ensureProjectDir();
+    const filePath = this.getFileChangesPath(sessionId);
+    const data = this.fileChangeTracker.toJSON(sessionId);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  }
+
+  /** Load file change tracker state from disk, replacing current in-memory state. */
+  private loadFileChanges(sessionId: string): void {
+    const filePath = this.getFileChangesPath(sessionId);
+    if (!fs.existsSync(filePath)) {
+      return;
+    }
+    try {
+      const raw = fs.readFileSync(filePath, "utf8");
+      const data = JSON.parse(raw) as FileChangeTrackerData;
+      if (data && data.version === 1 && data.sessionId === sessionId) {
+        this.fileChangeTracker.loadFromJSON(data);
+      }
+    } catch {
+      // Ignore corrupt files — start with empty tracker
+    }
+  }
+
+  /** Remove persisted file change history for the given sessions. */
+  private removeFileChanges(sessionIds: string[]): void {
+    for (const sessionId of sessionIds) {
+      const filePath = this.getFileChangesPath(sessionId);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch {
+        // ignore delete failures
+      }
+    }
   }
 
   private updateSessionEntry(sessionId: string, updater: (entry: SessionEntry) => SessionEntry): SessionEntry | null {
@@ -1832,6 +1882,9 @@ ${skillMd}
       // Record file changes with the correct messageId
       this.flushPendingFileChanges(toolMessage.id, execution.toolCallId, execution.result.name);
 
+      // Persist file change history to disk so /rewind survives a restart.
+      this.saveFileChanges(sessionId);
+
       for (const followUpMessage of execution.result.followUpMessages ?? []) {
         if (followUpMessage.role !== "system") {
           continue;
@@ -1928,6 +1981,9 @@ ${skillMd}
     // The fileChangeTracker.rollback already consumed the changes,
     // but we should clear any remaining references.
     this.fileChangeTracker.clear();
+
+    // Also remove the persisted file changes on disk.
+    this.removeFileChanges([sessionId]);
 
     // Update session metadata.
     this.updateSessionEntry(sessionId, (entry) => ({
