@@ -82,6 +82,7 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
   const [nowTick, setNowTick] = useState(0);
   const [mcpStatuses, setMcpStatuses] = useState<ReturnType<typeof sessionManager.getMcpStatus>>([]);
   const [showProcessStdout, setShowProcessStdout] = useState(false);
+  const [prefillText, setPrefillText] = useState<string | null>(null);
 
   rawModeRef.current = mode;
   messagesRef.current = messages;
@@ -257,6 +258,11 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
             setErrorLine(`Rewound with warnings: ${result.warnings.join("; ")}`);
           } else {
             setErrorLine(null);
+          }
+          // If the target was a user message, pre-fill the input box
+          // so it looks like the message hasn't been sent yet.
+          if (result.prefillContent) {
+            setPrefillText(result.prefillContent);
           }
           // Load messages after the reset so all static items are rendered.
           setTimeout(() => {
@@ -658,6 +664,8 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
           busy={busy}
           loadingText={loadingText}
           runningProcesses={runningProcesses}
+          prefillText={prefillText}
+          onPrefillConsumed={() => setPrefillText(null)}
           onSubmit={handleSubmit}
           onModelConfigChange={handleModelConfigChange}
           onRawModeChange={handleRawModeChange}

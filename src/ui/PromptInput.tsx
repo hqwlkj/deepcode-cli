@@ -72,6 +72,8 @@ type Props = {
   disabled?: boolean;
   placeholder?: string;
   runningProcesses?: SessionEntry["processes"];
+  prefillText?: string | null;
+  onPrefillConsumed?: () => void;
   onSubmit: (submission: PromptSubmission) => void;
   onModelConfigChange: (selection: ModelConfigSelection) => string | Promise<string>;
   onRawModeChange?: (mode: string) => void;
@@ -125,6 +127,8 @@ export const PromptInput = React.memo(function PromptInput({
   disabled,
   placeholder,
   runningProcesses,
+  prefillText,
+  onPrefillConsumed,
   onSubmit,
   onModelConfigChange,
   onInterrupt,
@@ -271,6 +275,13 @@ export const PromptInput = React.memo(function PromptInput({
     setHistoryCursor(-1);
     setDraftBeforeHistory(null);
   }, [promptHistoryKey]);
+
+  useEffect(() => {
+    if (prefillText) {
+      setBuffer({ text: prefillText, cursor: prefillText.length });
+      onPrefillConsumed?.();
+    }
+  }, [prefillText, onPrefillConsumed]);
 
   useTerminalInput(
     (input, key) => {

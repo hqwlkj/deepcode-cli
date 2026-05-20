@@ -1891,7 +1891,10 @@ ${skillMd}
    *
    * @returns An object with `success` and an array of `warnings`.
    */
-  rewindToMessage(sessionId: string, targetMessageId: string): { success: boolean; warnings: string[] } {
+  rewindToMessage(
+    sessionId: string,
+    targetMessageId: string
+  ): { success: boolean; warnings: string[]; prefillContent?: string } {
     const messages = this.listSessionMessages(sessionId);
     const targetIndex = messages.findIndex((m) => m.id === targetMessageId);
 
@@ -1899,8 +1902,16 @@ ${skillMd}
       return { success: false, warnings: [] };
     }
 
-    // Keep target message and everything before it.
-    const keptMessages = messages.slice(0, targetIndex + 1);
+    // If the target is a user message, capture its content so the UI
+    // can pre-fill the input box — making it look like the message
+    // hasn't been sent yet.
+    const targetMessage = messages[targetIndex]!;
+    const prefillContent = targetMessage.role === "user" && targetMessage.content ? targetMessage.content : undefined;
+
+    // If prefillContent is set, the target user message is being "recalled"
+    // into the input box — exclude it from the displayed message list.
+    const keepTarget = !prefillContent;
+    const keptMessages = messages.slice(0, targetIndex + (keepTarget ? 1 : 0));
     this.saveSessionMessages(sessionId, keptMessages);
 
     // Roll back file system changes caused by removed messages.
@@ -1929,7 +1940,7 @@ ${skillMd}
       updateTime: new Date().toISOString(),
     }));
 
-    return { success: true, warnings: [...fileWarnings, ...bashWarnings] };
+    return { success: true, warnings: [...fileWarnings, ...bashWarnings], prefillContent };
   }
 
   /**

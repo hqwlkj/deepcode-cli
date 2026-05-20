@@ -255,18 +255,19 @@ test("rewindToMessage truncates messages and returns success", () => {
   });
   (manager as any).saveSessionsIndex(index);
 
-  // Rewind to user-2 (keep user-1, asst-1, user-2; discard asst-2)
+  // Rewind to user-2: since user-2 is a user message, it gets "recalled"
+  // into the input box — only user-1 and asst-1 are kept.
   const result = manager.rewindToMessage(sessionId, "user-2");
 
   assert.equal(result.success, true);
   assert.deepEqual(result.warnings, []);
+  assert.equal(result.prefillContent, "Second message");
 
-  // Verify messages were truncated
+  // Verify messages were truncated (target user message excluded)
   const messages = manager.listSessionMessages(sessionId);
-  assert.equal(messages.length, 3);
+  assert.equal(messages.length, 2);
   assert.equal(messages[0]!.id, "user-1");
   assert.equal(messages[1]!.id, "asst-1");
-  assert.equal(messages[2]!.id, "user-2");
 });
 
 test("rewindToMessage returns failure for non-existent message", () => {
@@ -652,6 +653,8 @@ test("rewind typical scenario: rewind to msg3 restores utils.js, removes utils.t
 
   // ================================================================
   // Execute rewind to Message 3 (user-msg-4)
+  // Since user-msg-4 is a user message, it gets "recalled" into the input box
+  // and is excluded from the message list.
   // ================================================================
   const result = manager.rewindToMessage(sessionId, "user-msg-4");
 
@@ -659,16 +662,16 @@ test("rewind typical scenario: rewind to msg3 restores utils.js, removes utils.t
   // Verify
   // ================================================================
 
-  // 1. rewindToMessage should succeed
+  // 1. rewindToMessage should succeed and return prefillContent
   assert.equal(result.success, true);
+  assert.equal(result.prefillContent, "删除 utils.js，改用 utils.ts");
 
-  // 2. Messages should be truncated to msg1–msg4 (inclusive)
+  // 2. Messages should be truncated to msg1–msg3 (target user message excluded)
   const messages = manager.listSessionMessages(sessionId);
-  assert.equal(messages.length, 4);
+  assert.equal(messages.length, 3);
   assert.equal(messages[0]!.id, "user-msg-1");
   assert.equal(messages[1]!.id, "asst-msg-2");
   assert.equal(messages[2]!.id, "tool-msg-3");
-  assert.equal(messages[3]!.id, "user-msg-4");
 
   // 3. ✅ utils.js should exist (created by msg2, restored by rolling back msg4's bash rm)
   assert.equal(fs.existsSync(utilsJsPath), true, "utils.js should exist after rewind");
@@ -822,6 +825,7 @@ test("rewind reverts bash mv rename: utils.ts restored to utils.js after rewind"
 
   // ================================================================
   // Execute rewind to Message 1 (user-msg-1) — back to before the mv
+  // Since user-msg-1 is a user message, it gets "recalled" into the input box.
   // ================================================================
   const result = manager.rewindToMessage(sessionId, "user-msg-1");
 
@@ -830,11 +834,11 @@ test("rewind reverts bash mv rename: utils.ts restored to utils.js after rewind"
   // ================================================================
 
   assert.equal(result.success, true);
+  assert.equal(result.prefillContent, "把 utils.js 重命名为 utils.ts");
 
-  // 1. Messages truncated to just user-msg-1
+  // 1. Messages should be empty (target user message excluded)
   const messages = manager.listSessionMessages(sessionId);
-  assert.equal(messages.length, 1);
-  assert.equal(messages[0]!.id, "user-msg-1");
+  assert.equal(messages.length, 0);
 
   // 2. ✅ utils.js should EXIST back (was deleted by mv, rolled back)
   assert.equal(fs.existsSync(utilsJsPath), true, "utils.js should be restored after rewind");
