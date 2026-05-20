@@ -265,6 +265,28 @@ export class FileChangeTracker {
     this.untrackableCommands.length = 0;
   }
 
+  /**
+   * Get the set of message IDs that have at least one recorded file change.
+   */
+  getChangedMessageIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const record of this.changes) {
+      ids.add(record.messageId);
+    }
+    return ids;
+  }
+
+  /**
+   * Get the set of message IDs associated with untrackable commands.
+   */
+  getUntrackableCommandMessageIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const cmd of this.untrackableCommands) {
+      ids.add(cmd.messageId);
+    }
+    return ids;
+  }
+
   // -------------------------------------------------------------------
   // Persistence helpers
   // -------------------------------------------------------------------

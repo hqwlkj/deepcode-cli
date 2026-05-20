@@ -4,6 +4,7 @@ import type { SessionMessage } from "../session";
 
 type Props = {
   messages: SessionMessage[];
+  rewindImpact: Map<string, { fileChangeCount: number; untrackableCount: number }>;
   onSelect: (messageId: string) => void;
   onCancel: () => void;
 };
@@ -17,7 +18,7 @@ const ROLE_LABELS: Record<string, string> = {
  * Interactive list that lets the user pick a message to rewind to.
  * Navigation mirrors SessionList: up/down arrows, Enter to select, Esc to cancel.
  */
-export function RewindMessageList({ messages, onSelect, onCancel }: Props): React.ReactElement {
+export function RewindMessageList({ messages, rewindImpact, onSelect, onCancel }: Props): React.ReactElement {
   const [index, setIndex] = useState(0);
   const { columns, rows } = useWindowSize();
 
@@ -130,6 +131,9 @@ export function RewindMessageList({ messages, onSelect, onCancel }: Props): Reac
             const roleLabel = ROLE_LABELS[message.role] ?? message.role;
             const preview = formatMessagePreview(message.content ?? "", 60);
             const time = formatTimestamp(message.createTime);
+            const impact = rewindImpact.get(message.id);
+            const fileChanges = impact?.fileChangeCount ?? 0;
+            const untracked = impact?.untrackableCount ?? 0;
             return (
               <Box key={message.id} height={2} marginBottom={1}>
                 <Box>
@@ -144,6 +148,18 @@ export function RewindMessageList({ messages, onSelect, onCancel }: Props): Reac
                       {roleLabel}
                     </Text>
                     {time ? <Text dimColor> ({time})</Text> : null}
+                    {fileChanges > 0 ? (
+                      <Text color="yellow">
+                        {" "}
+                        -- will revert {fileChanges} file change{fileChanges > 1 ? "s" : ""}
+                      </Text>
+                    ) : null}
+                    {untracked > 0 ? (
+                      <Text color="red">
+                        {" "}
+                        + {untracked} untrackable command{untracked > 1 ? "s" : ""}
+                      </Text>
+                    ) : null}
                   </Box>
                   <Box width="100%">
                     <Text dimColor>{preview}</Text>

@@ -2079,6 +2079,35 @@ ${skillMd}
   }
 
   /**
+   * For each message in the session, compute how many file changes and
+   * untrackable bash commands would be rolled back if we rewound to that
+   * message (i.e. how many are in messages *after* it).
+   */
+  getRewindImpact(sessionId: string): Map<string, { fileChangeCount: number; untrackableCount: number }> {
+    const messages = this.listSessionMessages(sessionId);
+    const impact = new Map<string, { fileChangeCount: number; untrackableCount: number }>();
+
+    const changedMessageIds = this.fileChangeTracker.getChangedMessageIds();
+    const untrackableMessageIds = this.fileChangeTracker.getUntrackableCommandMessageIds();
+
+    // Sweep from end to start, accumulating counts.
+    let fileChangeCount = 0;
+    let untrackableCount = 0;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i]!;
+      if (changedMessageIds.has(msg.id)) {
+        fileChangeCount++;
+      }
+      if (untrackableMessageIds.has(msg.id)) {
+        untrackableCount++;
+      }
+      impact.set(msg.id, { fileChangeCount, untrackableCount });
+    }
+
+    return impact;
+  }
+
+  /**
    * Rewind the conversation to the given message (inclusive).
    * All messages after the target are removed and any file changes
    * caused by those messages are rolled back.

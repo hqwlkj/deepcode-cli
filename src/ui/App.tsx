@@ -82,6 +82,9 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeNonce, setWelcomeNonce] = useState(0);
   const [rewindMessages, setRewindMessages] = useState<SessionMessage[]>([]);
+  const [rewindImpact, setRewindImpact] = useState<Map<string, { fileChangeCount: number; untrackableCount: number }>>(
+    () => new Map()
+  );
   const [resolvedSettings, setResolvedSettings] = useState(() => resolveCurrentSettings(projectRoot));
   const [nowTick, setNowTick] = useState(0);
   const [mcpStatuses, setMcpStatuses] = useState<ReturnType<typeof sessionManager.getMcpStatus>>([]);
@@ -288,6 +291,7 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
         // Show the rewind message selector.
         const candidates = sessionManager.getRewindableMessages(activeSessionId);
         setRewindMessages(candidates);
+        setRewindImpact(sessionManager.getRewindImpact(activeSessionId));
         setShowWelcome(false);
         setView("rewind-list");
         return;
@@ -731,7 +735,12 @@ export function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.
           }}
         />
       ) : view === "rewind-list" ? (
-        <RewindMessageList messages={rewindMessages} onSelect={handleRewindSelect} onCancel={() => setView("chat")} />
+        <RewindMessageList
+          messages={rewindMessages}
+          rewindImpact={rewindImpact}
+          onSelect={handleRewindSelect}
+          onCancel={() => setView("chat")}
+        />
       ) : shouldShowQuestionPrompt && pendingQuestion && !busy ? (
         <AskUserQuestionPrompt
           questions={pendingQuestion.questions}
