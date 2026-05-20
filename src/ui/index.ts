@@ -1,3 +1,9 @@
+import {
+  getThinkingOptionIndex,
+  MODEL_COMMAND_MODELS,
+  MODEL_COMMAND_THINKING_OPTIONS,
+} from "./components/ModelsDropdown";
+
 export {
   readSettings,
   readProjectSettings,
@@ -6,17 +12,17 @@ export {
   writeModelConfigSelection,
   resolveCurrentSettings,
   createOpenAIClient,
+  buildPromptDraftFromSessionMessage,
 } from "./App";
 export { default as AppContainer } from "./AppContainer";
 export { AskUserQuestionPrompt } from "./AskUserQuestionPrompt";
-export { MessageView } from "./compoments";
-export { parseDiffPreview } from "./compoments/MessageView/utils";
+export { MessageView } from "./components";
+export { parseDiffPreview } from "./components/MessageView/utils";
 export {
   PromptInput,
   IMAGE_ATTACHMENT_CLEAR_HINT,
   formatImageAttachmentStatus,
   formatSelectedSkillsStatus,
-  isSkillSelected,
   addUniqueSkill,
   toggleSkillSelection,
   removeCurrentSlashToken,
@@ -24,16 +30,16 @@ export {
   getPromptReturnKeyAction,
   renderBufferWithCursor,
   buildInitPromptSubmission,
-  getThinkingOptionIndex,
-  MODEL_COMMAND_MODELS,
-  MODEL_COMMAND_THINKING_OPTIONS,
   useTerminalInput,
   parseTerminalInput,
+  dispatchTerminalInput,
   type PromptSubmission,
+  type PromptDraft,
   type InputKey,
 } from "./PromptInput";
+export { getThinkingOptionIndex, MODEL_COMMAND_MODELS, MODEL_COMMAND_THINKING_OPTIONS };
 export { disableTerminalExtendedKeys, enableTerminalExtendedKeys, getPromptCursorPlacement } from "./prompt/cursor";
-export { SessionList, formatSessionTitle } from "./SessionList";
+export { SessionList, formatSessionTitle, filterSessions, formatSessionStatus } from "./SessionList";
 export { ThemedGradient } from "./ThemedGradient";
 export { UpdatePrompt, type UpdatePromptChoice } from "./UpdatePrompt";
 export { WelcomeScreen, formatHomeRelativePath, buildWelcomeTips } from "./WelcomeScreen";
@@ -48,7 +54,7 @@ export {
 } from "./askUserQuestion";
 export { readClipboardImage, type ClipboardImage } from "./clipboard";
 export { buildLoadingText, type LoadingTextInput } from "./loadingText";
-export { renderMarkdown } from "./compoments/MessageView/markdown";
+export { renderMarkdown } from "./components/MessageView/markdown";
 export {
   EMPTY_BUFFER,
   insertText,
