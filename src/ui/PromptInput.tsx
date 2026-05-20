@@ -671,11 +671,7 @@ export const PromptInput = React.memo(function PromptInput({
     }
     if (item.kind === "undo") {
       onSubmit({ text: "/undo", imageUrls: [], command: "undo" });
-      setBuffer(EMPTY_BUFFER);
-      clearUndoRedoStacks();
-      setImageUrls([]);
-      setSelectedSkills([]);
-      setShowSkillsDropdown(false);
+      resetPromptInput();
       return;
     }
     if (item.kind === "mcp") {
@@ -685,11 +681,7 @@ export const PromptInput = React.memo(function PromptInput({
     }
     if (item.kind === "rewind") {
       onSubmit({ text: "/rewind", imageUrls: [], command: "rewind" });
-      setBuffer(EMPTY_BUFFER);
-      clearUndoRedoStacks();
-      setImageUrls([]);
-      setSelectedSkills([]);
-      setShowSkillsDropdown(false);
+      resetPromptInput();
       return;
     }
     if (item.kind === "exit") {
