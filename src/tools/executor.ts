@@ -32,6 +32,12 @@ export type ToolCall = {
   };
 };
 
+/** Payload passed by tool handlers after they've finished writing a file. */
+export type FileChangeCompleted = {
+  filePath: string;
+  afterContent: string | null;
+};
+
 export type ToolExecutionContext = {
   sessionId: string;
   projectRoot: string;
@@ -44,6 +50,7 @@ export type ToolExecutionContext = {
   onBeforeFileMutation?: (filePath: string) => void;
   onAfterFileMutation?: (filePath: string) => void;
   onFileChange?: (change: FileChange) => void;
+  onFileChangeCompleted?: (completed: FileChangeCompleted) => void;
   onUntrackableBashCommand?: (command: string, reason: string) => void;
   bashTimeoutMs?: number;
   bashMinTimeoutMs?: number;
@@ -57,6 +64,7 @@ export type ToolExecutionHooks = {
   onBeforeFileMutation?: (filePath: string) => void;
   onAfterFileMutation?: (filePath: string) => void;
   onFileChange?: (change: FileChange) => void;
+  onFileChangeCompleted?: (completed: FileChangeCompleted) => void;
   onUntrackableBashCommand?: (command: string, reason: string) => void;
   shouldStop?: () => boolean;
 };
@@ -237,6 +245,7 @@ export class ToolExecutor {
         onBeforeFileMutation: hooks?.onBeforeFileMutation,
         onAfterFileMutation: hooks?.onAfterFileMutation,
         onFileChange: hooks?.onFileChange,
+        onFileChangeCompleted: hooks?.onFileChangeCompleted,
         onUntrackableBashCommand: hooks?.onUntrackableBashCommand,
       });
     } catch (error) {

@@ -271,6 +271,7 @@ export class SessionManager {
   private readonly fileChangeTracker = new FileChangeTracker();
   private readonly pendingFileChanges = new Map<string, FileChange[]>();
   private readonly pendingUntrackableCommands = new Map<string, string[]>();
+  private readonly pendingFileCompletions = new Map<string, string>();
 
   constructor(options: SessionManagerOptions) {
     this.projectRoot = options.projectRoot;
@@ -1986,6 +1987,7 @@ ${skillMd}
     // Clear pending file changes before execution
     this.pendingFileChanges.clear();
     this.pendingUntrackableCommands.clear();
+    this.pendingFileCompletions.clear();
 
     const toolExecutions = await this.toolExecutor.executeToolCalls(sessionId, toolCalls, {
       onProcessStart: (pid, command) => this.addSessionProcess(sessionId, pid, command),
@@ -1998,6 +2000,11 @@ ${skillMd}
         const pending = this.pendingFileChanges.get(change.filePath) ?? [];
         pending.push(change);
         this.pendingFileChanges.set(change.filePath, pending);
+      },
+      onFileChangeCompleted: (completed) => {
+        if (completed.afterContent !== null) {
+          this.pendingFileCompletions.set(completed.filePath, completed.afterContent);
+        }
       },
       onUntrackableBashCommand: (command, reason) => {
         const pending = this.pendingUntrackableCommands.get(command) ?? [];
@@ -2062,6 +2069,12 @@ ${skillMd}
     }
     this.pendingFileChanges.clear();
     this.pendingUntrackableCommands.clear();
+
+    // Finalize diffs for all file changes that have after-content captured.
+    for (const [filePath, afterContent] of this.pendingFileCompletions) {
+      this.fileChangeTracker.finalizeWithDiff(messageId, filePath, afterContent);
+    }
+    this.pendingFileCompletions.clear();
   }
 
   /**

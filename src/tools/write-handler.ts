@@ -109,6 +109,7 @@ export async function handleWriteTool(
 
         const bytes = writeTextFile(filePath, normalizedContent, encoding, lineEndings);
         context.onAfterFileMutation?.(filePath);
+        context.onFileChangeCompleted?.({ filePath, afterContent: normalizedContent });
         const freshMetadata = readTextFileWithMetadata(filePath);
 
         recordFileState(

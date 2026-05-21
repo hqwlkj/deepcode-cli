@@ -1217,3 +1217,105 @@ test("removeFileChanges deletes persisted file from disk", () => {
   // Verify file is gone
   assert.equal(fs.existsSync(fileChangesPath), false, "file changes JSON should be deleted after remove");
 });
+
+// --- Diff-based rollback tests ---
+
+test("finalizeWithDiff computes and stores reverseDiff", () => {
+  const projectDir = createTempDir("deepcode-test-diff-1-");
+
+  const tracker = new FileChangeTracker();
+  const oldContent = "line1\nline2 old\nline3\n";
+  const newContent = "line1\nline2 new\nline3\n";
+
+  // Write the old content to disk (simulate file before modification)
+  const filePath = path.join(projectDir, "test.txt");
+  fs.writeFileSync(filePath, oldContent, "utf8");
+
+  // Record a modify change with old content
+  tracker.recordChange("msg-1", "call-1", "edit", {
+    type: "modify",
+    filePath,
+    previousContent: oldContent,
+    previousExists: true,
+  });
+
+  // Simulate: tool writes new content, then finalize
+  fs.writeFileSync(filePath, newContent, "utf8");
+  tracker.finalizeWithDiff("msg-1", filePath, newContent);
+
+  // Verify reverseDiff was generated
+  const data = tracker.toJSON("session-1");
+  const change = data.changes[0]?.changes[0];
+  assert.ok(change, "change should exist");
+  assert.ok(change!.reverseDiff, "reverseDiff should be computed");
+  assert.ok(change!.reverseDiff!.includes("line2 old"), "reverseDiff should contain old content");
+  assert.ok(change!.reverseDiff!.includes("line2 new"), "reverseDiff should contain new content");
+});
+
+test("rollback applies reverseDiff before falling back to previousContent", () => {
+  const projectDir = createTempDir("deepcode-test-diff-2-");
+
+  const tracker = new FileChangeTracker();
+  const oldContent = "line1\nline2 before\nline3\n";
+  const newContent = "line1\nline2 after edit\nline3\n";
+
+  const filePath = path.join(projectDir, "test-edit.txt");
+  fs.writeFileSync(filePath, oldContent, "utf8");
+
+  // Record change and finalize
+  tracker.recordChange("msg-1", "call-1", "edit", {
+    type: "modify",
+    filePath,
+    previousContent: oldContent,
+    previousExists: true,
+  });
+  fs.writeFileSync(filePath, newContent, "utf8");
+  tracker.finalizeWithDiff("msg-1", filePath, newContent);
+
+  // Now simulate rollback (non-Git project)
+  // Rollback should try reverseDiff first and succeed
+  const changesToRollback = tracker.getChangesAfter(-1, [{ id: "msg-1" }]);
+  assert.equal(changesToRollback.length, 1, "should have one change record to roll back");
+
+  const warnings = tracker.rollback(changesToRollback, projectDir);
+  assert.equal(warnings.length, 0, "rollback should succeed without warnings");
+
+  // Verify file was restored to old content via reverseDiff
+  const restored = fs.readFileSync(filePath, "utf8");
+  assert.equal(restored, oldContent, "file should be restored to old content via reverseDiff");
+});
+
+test("rollback falls back to previousContent when file no longer matches reverseDiff", () => {
+  const projectDir = createTempDir("deepcode-test-diff-3-");
+
+  const tracker = new FileChangeTracker();
+  const oldContent = "lineA\nlineB original\nlineC\n";
+  const newContent = "lineA\nlineB changed\nlineC\n";
+  const tamperedContent = "lineA\nlineB someone changed it\nlineC\n";
+
+  const filePath = path.join(projectDir, "test-fallback.txt");
+  fs.writeFileSync(filePath, oldContent, "utf8");
+
+  // Record change and finalize
+  tracker.recordChange("msg-1", "call-1", "edit", {
+    type: "modify",
+    filePath,
+    previousContent: oldContent,
+    previousExists: true,
+  });
+  fs.writeFileSync(filePath, newContent, "utf8");
+  tracker.finalizeWithDiff("msg-1", filePath, newContent);
+
+  // Tamper with the file so it no longer matches the expected diff pattern
+  fs.writeFileSync(filePath, tamperedContent, "utf8");
+
+  // Rollback should fail to apply reverseDiff (file doesn't match),
+  // but fall back to previousContent successfully.
+  const changesToRollback = tracker.getChangesAfter(-1, [{ id: "msg-1" }]);
+  const warnings = tracker.rollback(changesToRollback, projectDir);
+  assert.equal(warnings.length, 0, "rollback should succeed via previousContent fallback");
+
+  // Verify file was restored to old content (via previousContent fallback)
+  const restored = fs.readFileSync(filePath, "utf8");
+  assert.equal(restored, oldContent, "file should be restored to old content via previousContent fallback");
+});

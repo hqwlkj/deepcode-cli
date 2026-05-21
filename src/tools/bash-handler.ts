@@ -50,12 +50,21 @@ export async function handleBashTool(
   // Track file changes BEFORE execution to capture correct pre-bash file state.
   // Must happen before executeShellCommand because destructive commands (rm, mv)
   // would remove or rename files before we can capture their content.
-  const bashWarning = trackBashFileChanges(command, startCwd, context);
+  const { warning: bashWarning, filePaths: trackedBashPaths } = trackBashFileChanges(command, startCwd, context);
   if (bashWarning) {
     context.onUntrackableBashCommand?.(command, bashWarning);
   }
 
   const execution = await executeShellCommand(shellPath, shellArgs, startCwd, command, context);
+
+  // Capture after-content for files affected by the bash command so
+  // the file-change tracker can compute a reverse diff.
+  if (context.onFileChangeCompleted) {
+    for (const filePath of trackedBashPaths) {
+      const afterContent = fs.existsSync(filePath) ? tryReadFile(filePath) : null;
+      context.onFileChangeCompleted({ filePath, afterContent });
+    }
+  }
   const result = buildToolCommandResult(
     execution.stdout,
     execution.stderr,
@@ -346,9 +355,18 @@ function buildErrorMessage(exitCode: number | null, signal: string | null, error
  * @returns A warning string if the command is untrackable (e.g. package installation),
  *          or null if tracking succeeded or the command is benign.
  */
-function trackBashFileChanges(command: string, cwd: string, context: ToolExecutionContext): string | null {
+function trackBashFileChanges(
+  command: string,
+  cwd: string,
+  context: ToolExecutionContext
+): {
+  warning: string | null;
+  filePaths: string[];
+} {
+  const filePaths: string[] = [];
+
   if (!context.onFileChange) {
-    return null;
+    return { warning: null, filePaths };
   }
 
   const trimmed = command.trim();
@@ -362,6 +380,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
       if (!cleanPart) continue;
       const absPath = resolvePath(cleanPart, cwd);
       if (!absPath) continue;
+      filePaths.push(absPath);
       const exists = fs.existsSync(absPath);
       context.onFileChange!({
         type: "delete",
@@ -370,7 +389,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
         previousExists: exists,
       });
     }
-    return null;
+    return { warning: null, filePaths };
   }
 
   // mv <source> <dest>
@@ -381,6 +400,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
     const sourcePath = resolvePath(source, cwd);
     const destPath = resolvePath(dest, cwd);
     if (sourcePath) {
+      filePaths.push(sourcePath);
       const sourceExisted = fs.existsSync(sourcePath);
       context.onFileChange!({
         type: "delete",
@@ -390,6 +410,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
       });
     }
     if (destPath) {
+      filePaths.push(destPath);
       const destExisted = fs.existsSync(destPath);
       context.onFileChange!({
         type: destExisted ? "modify" : "create",
@@ -398,7 +419,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
         previousExists: destExisted,
       });
     }
-    return null;
+    return { warning: null, filePaths };
   }
 
   // touch <files...>
@@ -410,6 +431,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
       if (!cleanPart) continue;
       const absPath = resolvePath(cleanPart, cwd);
       if (!absPath) continue;
+      filePaths.push(absPath);
       const existed = fs.existsSync(absPath);
       context.onFileChange!({
         type: existed ? "modify" : "create",
@@ -418,7 +440,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
         previousExists: existed,
       });
     }
-    return null;
+    return { warning: null, filePaths };
   }
 
   // cp <source> <dest>
@@ -427,6 +449,7 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
     const dest = cpMatch[2].replace(/["']/g, "").trim();
     const destPath = resolvePath(dest, cwd);
     if (destPath) {
+      filePaths.push(destPath);
       const destExisted = fs.existsSync(destPath);
       context.onFileChange!({
         type: destExisted ? "modify" : "create",
@@ -435,11 +458,12 @@ function trackBashFileChanges(command: string, cwd: string, context: ToolExecuti
         previousExists: destExisted,
       });
     }
-    return null;
+    return { warning: null, filePaths };
   }
 
   // Check if the command is an untrackable operation and return a warning.
-  return classifyUntrackable(trimmed);
+  const warning = classifyUntrackable(trimmed);
+  return { warning, filePaths };
 }
 
 /**

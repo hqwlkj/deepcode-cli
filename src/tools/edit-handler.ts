@@ -333,6 +333,7 @@ export async function handleEditTool(
         context.onBeforeFileMutation?.(filePath);
         writeTextFile(filePath, updated, metadata.encoding, metadata.lineEndings);
         context.onAfterFileMutation?.(filePath);
+        context.onFileChangeCompleted?.({ filePath, afterContent: updated });
         const freshMetadata = readTextFileWithMetadata(filePath);
         recordFileState(
           context.sessionId,

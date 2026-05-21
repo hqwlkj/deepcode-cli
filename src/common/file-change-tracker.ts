@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";
+import { buildDiffPreview, applyUnifiedDiff } from "./file-utils";
 
 export type FileChangeType = "create" | "modify" | "delete";
 
@@ -10,6 +11,12 @@ export type FileChange = {
   previousContent?: string | null;
   previousExists: boolean;
   previousHash?: string;
+  /**
+   * Unified diff mapping the tool-produced content back to the
+   * pre-modification state.  Preferred over previousContent for
+   * rollback because patching is less destructive.
+   */
+  reverseDiff?: string | null;
 };
 
 export type FileChangeRecord = {
@@ -159,6 +166,26 @@ export class FileChangeTracker {
     });
   }
 
+  /**
+   * After a tool has written new content to a file, compute and store
+   * a reverse diff (afterContent → previousContent) so the /rewind
+   * rollback can apply a minimal patch instead of writing the full
+   * previous content back.
+   */
+  finalizeWithDiff(messageId: string, filePath: string, afterContent: string): void {
+    const change = this.findExistingRecord(messageId, filePath);
+    if (!change || !change.previousContent) {
+      return;
+    }
+
+    // Build a diff from *after* (current) back to *before* (original).
+    const diff = buildDiffPreview(filePath, afterContent, change.previousContent, Number.MAX_SAFE_INTEGER);
+
+    if (diff) {
+      change.reverseDiff = diff;
+    }
+  }
+
   private rollbackSingleChange(change: FileChange, gitProjectRoot?: string): void {
     switch (change.type) {
       case "create":
@@ -173,6 +200,14 @@ export class FileChangeTracker {
         // For Git-tracked files, prefer `git checkout` to restore committed content.
         if (gitProjectRoot && isFileGitTracked(gitProjectRoot, change.filePath)) {
           restoreFileFromGit(gitProjectRoot, change.filePath);
+          return;
+        }
+        // Diff-first: try applying reverse-diff patch (smaller, safer).
+        if (
+          change.reverseDiff &&
+          fs.existsSync(change.filePath) &&
+          applyUnifiedDiff(change.filePath, change.reverseDiff)
+        ) {
           return;
         }
         // Fallback: restore from stored previous content.
