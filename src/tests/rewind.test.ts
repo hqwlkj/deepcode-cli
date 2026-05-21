@@ -884,7 +884,7 @@ test("FileChangeTracker.rollback uses git checkout for tracked files in a Git re
 
   // Verify: file should be restored to committed version (not stored previousContent)
   assert.equal(warnings.length, 0, "should have no rollback errors");
-  const restored = fs.readFileSync(filePath, "utf8");
+  const restored = fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
   assert.equal(restored, originalContent, "file should be restored via git checkout");
 });
 
