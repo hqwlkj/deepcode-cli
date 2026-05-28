@@ -170,7 +170,7 @@ function StatusLine({
       </Box>
       <Box flexGrow={1} width={contentWidth} gap={1}>
         <Text wrap={mode === RawMode.Lite ? "truncate-end" : "wrap"}>
-          <Text key="name" bold color={theme.text}>
+          <Text key="name" bold>
             {name}
           </Text>
           {params ? (
