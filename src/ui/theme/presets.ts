@@ -8,14 +8,10 @@ export const DEFAULT_THEME: ThemeTokens = {
   error: "#f5222d",
   warning: "#fa8c16",
   info: "#2f54eb",
-  riskLow: "#22c55e",
-  riskMedium: "#f59e0b",
-  riskHigh: "#ef4444",
   text: "#3D4149",
   textDim: "#646A71",
   code: "#787f8a",
   border: "#ABADB1",
-  thinking: "#ff4400",
   gradients: ["#229ac3", "#7c3aed"],
 };
 

@@ -26,14 +26,10 @@ const REQUIRED_TOKEN_KEYS: Array<keyof ThemeTokens> = [
   "error",
   "warning",
   "info",
-  "riskLow",
-  "riskMedium",
-  "riskHigh",
   "text",
   "textDim",
   "code",
   "border",
-  "thinking",
   "gradients",
 ];
 
@@ -62,19 +58,12 @@ test("DEFAULT_THEME semantic colors match expected values", () => {
   assert.equal(DEFAULT_THEME.error, "#f5222d");
   assert.equal(DEFAULT_THEME.warning, "#fa8c16");
   assert.equal(DEFAULT_THEME.info, "#2f54eb");
-  assert.equal(DEFAULT_THEME.thinking, "#ff4400");
 });
 
 test("DEFAULT_THEME base colors match expected values", () => {
   assert.equal(DEFAULT_THEME.text, "#3D4149");
   assert.equal(DEFAULT_THEME.textDim, "#646A71");
   assert.equal(DEFAULT_THEME.code, "#787f8a");
-});
-
-test("DEFAULT_THEME risk colors match expected values", () => {
-  assert.equal(DEFAULT_THEME.riskLow, "#22c55e");
-  assert.equal(DEFAULT_THEME.riskMedium, "#f59e0b");
-  assert.equal(DEFAULT_THEME.riskHigh, "#ef4444");
 });
 
 test("PRESETS map contains default", () => {
@@ -136,14 +125,10 @@ test("resolveTheme full custom tokens with custom preset", () => {
     error: "blue",
     warning: "blue",
     info: "blue",
-    riskLow: "#111111",
-    riskMedium: "#222222",
-    riskHigh: "#333333",
     text: "blue",
     textDim: "blue",
     code: "blue",
     border: "blue",
-    thinking: "blue",
     gradients: ["#aaaaaa", "#bbbbbb"],
   };
   const result = resolveTheme({ preset: "custom", tokens: customTokens });
@@ -312,17 +297,17 @@ test("resolveSettingsSources uses default theme when preset is not custom", () =
 // getScopeRiskColor with theme parameter
 // ---------------------------------------------------------------------------
 
-test("getScopeRiskColor returns dark theme defaults when no theme is passed", () => {
-  assert.equal(getScopeRiskColor("read-in-cwd"), "#22c55e");
-  assert.equal(getScopeRiskColor("write-in-cwd"), "#f59e0b");
-  assert.equal(getScopeRiskColor("write-out-cwd"), "#ef4444");
+test("getScopeRiskColor returns default theme colors when no theme is passed", () => {
+  assert.equal(getScopeRiskColor("read-in-cwd"), "#52c41a");
+  assert.equal(getScopeRiskColor("write-in-cwd"), "#faad14");
+  assert.equal(getScopeRiskColor("write-out-cwd"), "#ff4d4f");
 });
 
-test("getScopeRiskColor uses theme risk colors when theme is provided", () => {
+test("getScopeRiskColor uses theme semantic colors when theme is provided", () => {
   const custom: Partial<ThemeTokens> = {
-    riskLow: "#aaaaaa",
-    riskMedium: "#bbbbbb",
-    riskHigh: "#cccccc",
+    success: "#aaaaaa",
+    warning: "#bbbbbb",
+    error: "#cccccc",
   };
   assert.equal(getScopeRiskColor("read-in-cwd", custom as ThemeTokens), "#aaaaaa");
   assert.equal(getScopeRiskColor("mcp", custom as ThemeTokens), "#bbbbbb");

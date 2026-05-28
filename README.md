@@ -158,7 +158,7 @@ Deep Code CLI 内置一套默认主题（`DEFAULT_THEME`），无需配置即可
   "theme": {
     "preset": "custom",
     "overrides": {
-      "accent": "#ff6600",
+      "primary": "#ff6600",
       "success": "greenBright"
     }
   }
@@ -174,21 +174,16 @@ Deep Code CLI 内置一套默认主题（`DEFAULT_THEME`），无需配置即可
   "theme": {
     "preset": "custom",
     "tokens": {
-      "accent": "#229ac3",
-      "accentAlpha": "#229ac3e6",
-      "active": "cyanBright",
+      "primary": "#229ac3",
+      "secondary": "#229ac3e6",
       "success": "green",
       "error": "red",
       "warning": "yellow",
       "info": "magenta",
-      "riskLow": "#22c55e",
-      "riskMedium": "#f59e0b",
-      "riskHigh": "#ef4444",
       "text": "white",
       "textDim": "gray",
       "code": "cyan",
       "border": "gray",
-      "thinking": "gray",
       "gradients": ["#229ac3e6", "#229ac3e6"]
     }
   }
@@ -201,10 +196,9 @@ Deep Code CLI 内置一套默认主题（`DEFAULT_THEME`），无需配置即可
 
 | Token                                       | 用途                               |
 |---------------------------------------------|----------------------------------|
-| `accent`、`accentAlpha`、`active`             | Logo、用户消息、选中项等                   |
-| `success`、`error`、`warning`、`info`          | 工具状态、权限提示、技能加载，`warning` 也是列表标记色 |
-| `riskLow`、`riskMedium`、`riskHigh`           | 权限确认面板                           |
-| `text`、`textDim`、`code`、`border`、`thinking` | 正文、副文/引用块、代码、边框、思考状态             |
+| `primary`、`secondary`             | Logo、用户消息、选中项等                   |
+| `success`、`error`、`warning`、`info`          | 工具状态、权限提示（风险等级）、技能加载，`warning` 也是列表标记色 |
+| `text`、`textDim`、`code`、`border` | 正文、副文/引用块、代码、边框 |
 | `gradients`                                 | Logo 与退出面板的渐变色数组                 |
 
 颜色值支持 hex（`"#ff6600"`）、hex 含透明度（`"#229ac3e6"`）、chalk 命名色（`"cyanBright"`、`"green"`）。

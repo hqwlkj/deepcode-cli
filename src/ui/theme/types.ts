@@ -7,22 +7,14 @@ export interface ThemeTokens {
   secondary: string;
 
   // ——— 语义颜色 ———
-  /** 成功：工具执行成功、MCP ready */
+  /** 成功：工具执行成功、MCP ready，低风险操作 */
   success: string;
-  /** 失败/错误：工具执行失败、错误信息 */
+  /** 失败/错误：工具执行失败、错误信息，高风险操作 */
   error: string;
-  /** 警告/进行中：忙时 spinner、权限提示，及 Markdown 列表标记 */
+  /** 警告/进行中：忙时 spinner、权限提示、中风险操作，及 Markdown 列表标记 */
   warning: string;
   /** 特殊指示：技能、图片附件 */
   info: string;
-
-  // ——— 风险等级色 ———
-  /** 低风险操作 */
-  riskLow: string;
-  /** 中风险操作 */
-  riskMedium: string;
-  /** 高风险操作 */
-  riskHigh: string;
 
   // ——— 基础色 ———
   /** 主文字颜色 */
@@ -33,8 +25,6 @@ export interface ThemeTokens {
   code: string;
   /** 边框 */
   border: string;
-  /** 思考状态 bullet 颜色 */
-  thinking: string;
 
   // ——— 渐变 ———
   /** Logo 渐变色数组 */

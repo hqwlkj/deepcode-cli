@@ -3,8 +3,8 @@ import { Box, Text } from "ink";
 import { useTerminalInput } from "../hooks";
 import type { AskPermissionRequest, AskPermissionScope, UserToolPermission } from "../../common/permissions";
 import type { PermissionScope } from "../../settings";
-import { useTheme } from "../theme/ThemeContext";
-import type { ThemeTokens } from "../theme/types";
+import { useTheme } from "../theme";
+import type { ThemeTokens } from "../theme";
 
 export type PermissionPromptResult = {
   permissions: UserToolPermission[];
@@ -232,24 +232,24 @@ function isAlwaysAllowedScope(scope: AskPermissionScope): scope is PermissionSco
 }
 
 export function getScopeRiskColor(scope: AskPermissionScope, theme?: ThemeTokens): string {
-  const t = theme ?? { riskLow: "#22c55e", riskMedium: "#f59e0b", riskHigh: "#ef4444" };
+  const t = theme ?? ({ success: "#52c41a", warning: "#faad14", error: "#ff4d4f" } as ThemeTokens);
   switch (scope) {
     case "read-in-cwd":
     case "query-git-log":
-      return t.riskLow;
+      return t.success;
     case "read-out-cwd":
     case "write-in-cwd":
     case "network":
     case "mcp":
-      return t.riskMedium;
+      return t.warning;
     case "write-out-cwd":
     case "delete-in-cwd":
     case "delete-out-cwd":
     case "mutate-git-log":
     case "unknown":
-      return t.riskHigh;
+      return t.error;
     default:
-      return t.riskHigh;
+      return t.error;
   }
 }
 

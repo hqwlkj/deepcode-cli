@@ -158,7 +158,7 @@ Override only the colors you want to change; the rest keep their defaults:
   "theme": {
     "preset": "custom",
     "overrides": {
-      "accent": "#ff6600",
+      "primary": "#ff6600",
       "success": "greenBright"
     }
   }
@@ -174,21 +174,16 @@ Provide a complete tokens object, merged on top of the default theme:
   "theme": {
     "preset": "custom",
     "tokens": {
-      "accent": "#229ac3",
-      "accentAlpha": "#229ac3e6",
-      "active": "cyanBright",
+      "primary": "#229ac3",
+      "secondary": "#229ac3e6",
       "success": "green",
       "error": "red",
       "warning": "yellow",
       "info": "magenta",
-      "riskLow": "#22c55e",
-      "riskMedium": "#f59e0b",
-      "riskHigh": "#ef4444",
       "text": "white",
       "textDim": "gray",
       "code": "cyan",
       "border": "gray",
-      "thinking": "gray",
       "gradients": ["#229ac3e6", "#229ac3e6"]
     }
   }
@@ -201,10 +196,9 @@ Available token descriptions:
 
 | Token | Used For |
 |-------|----------|
-| `accent`, `accentAlpha`, `active` | Logo, user messages, selected items, etc. |
-| `success`, `error`, `warning`, `info` | Tool statuses, permission prompts, skill loading; `warning` also colors list bullets |
-| `riskLow`, `riskMedium`, `riskHigh` | Permission confirmation panel |
-| `text`, `textDim`, `code`, `border`, `thinking` | Body text, secondary text/blockquotes, code, borders, thinking status |
+| `primary`, `secondary` | Logo, user messages, selected items, etc. |
+| `success`, `error`, `warning`, `info` | Tool statuses, permission prompts (risk levels), skill loading; `warning` also colors list bullets |
+| `text`, `textDim`, `code`, `border` | Body text, secondary text/blockquotes, code, borders |
 | `gradients` | Logo and exit panel gradient colors |
 
 Color values support hex (`"#ff6600"`), hex with alpha (`"#229ac3e6"`), and chalk named colors (`"cyanBright"`, `"green"`).
