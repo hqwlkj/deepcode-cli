@@ -54,10 +54,10 @@ test("DEFAULT_THEME primary matches expected brand color", () => {
 });
 
 test("DEFAULT_THEME semantic colors match expected values", () => {
-  assert.equal(DEFAULT_THEME.success, "#52c41a");
-  assert.equal(DEFAULT_THEME.error, "#f5222d");
+  assert.equal(DEFAULT_THEME.success, "#1a7f37");
+  assert.equal(DEFAULT_THEME.error, "#d1242f");
   assert.equal(DEFAULT_THEME.warning, "#fa8c16");
-  assert.equal(DEFAULT_THEME.info, "#2f54eb");
+  assert.equal(DEFAULT_THEME.info, "#0969da");
 });
 
 test("DEFAULT_THEME base colors match expected values", () => {
