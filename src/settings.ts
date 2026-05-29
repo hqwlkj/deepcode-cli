@@ -12,6 +12,7 @@ export type DeepcodingEnv = Record<string, string | undefined> & {
   THINKING_ENABLED?: string;
   REASONING_EFFORT?: string;
   DEBUG_LOG_ENABLED?: string;
+  TELEMETRY_ENABLED?: string;
 };
 
 export type ReasoningEffort = "high" | "max";
@@ -49,6 +50,7 @@ export type DeepcodingSettings = {
   thinkingEnabled?: boolean;
   reasoningEffort?: ReasoningEffort;
   debugLogEnabled?: boolean;
+  telemetryEnabled?: boolean;
   notify?: string;
   webSearchTool?: string;
   mcpServers?: Record<string, McpServerConfig>;
@@ -64,6 +66,7 @@ export type ResolvedDeepcodingSettings = {
   thinkingEnabled: boolean;
   reasoningEffort: ReasoningEffort;
   debugLogEnabled: boolean;
+  telemetryEnabled: boolean;
   notify?: string;
   webSearchTool?: string;
   mcpServers?: Record<string, McpServerConfig>;
@@ -317,6 +320,14 @@ export function resolveSettingsSources(
     parseBoolean(userEnv.DEBUG_LOG_ENABLED) ??
     false;
 
+  const telemetryEnabled =
+    parseBoolean(systemEnv.TELEMETRY_ENABLED) ??
+    parseBoolean(projectSettings?.telemetryEnabled) ??
+    parseBoolean(projectEnv.TELEMETRY_ENABLED) ??
+    parseBoolean(userSettings?.telemetryEnabled) ??
+    parseBoolean(userEnv.TELEMETRY_ENABLED) ??
+    true;
+
   const notify =
     trimString(systemEnv.NOTIFY) || trimString(projectSettings?.notify) || trimString(userSettings?.notify) || "";
   const webSearchTool =
@@ -333,6 +344,7 @@ export function resolveSettingsSources(
     thinkingEnabled,
     reasoningEffort,
     debugLogEnabled,
+    telemetryEnabled,
     notify: notify || undefined,
     webSearchTool: webSearchTool || undefined,
     mcpServers: mergeMcpServers(userSettings, projectSettings, userEnv, projectEnv, systemEnv),
