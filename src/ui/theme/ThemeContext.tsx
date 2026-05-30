@@ -1,9 +1,9 @@
 import { createContext, useContext } from "react";
 import type { ThemeTokens } from "./types";
-import { DEFAULT_THEME } from "./presets";
+import { LIGHT_THEME } from "./presets";
 
 /** 主题 React Context */
-const ThemeContext = createContext<ThemeTokens>(DEFAULT_THEME);
+const ThemeContext = createContext<ThemeTokens>(LIGHT_THEME);
 
 /** 主题 Provider */
 export const ThemeProvider = ThemeContext.Provider;

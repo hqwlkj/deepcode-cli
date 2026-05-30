@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Text, useApp, useStdout } from "ink";
 import chalk from "chalk";
 import { useTheme } from "../theme";
+import { useAppContext } from "../contexts";
 import { ARGS_SEPARATOR } from "../constants";
 import {
   EMPTY_BUFFER,
@@ -54,9 +55,10 @@ import {
 } from "../hooks";
 import SlashCommandMenu, { isSkillSelected } from "./SlashCommandMenu";
 import type { ModelConfigSelection, PermissionScope } from "../../settings";
-import { FileMentionMenu, ModelsDropdown, RawModelDropdown, SkillsDropdown } from "../components";
+import { FileMentionMenu, ModelsDropdown, RawModelDropdown, SkillsDropdown, ThemeDropdown } from "../components";
 import type { SessionEntry, SkillInfo } from "../../session";
 import type { UserToolPermission } from "../../common/permissions";
+import type { ThemePreset } from "../theme";
 
 export type PromptSubmission = {
   text: string;
@@ -85,11 +87,14 @@ type Props = {
   placeholder?: string;
   runningProcesses?: SessionEntry["processes"];
   promptDraft?: PromptDraft | null;
+  currentPreset: ThemePreset;
   onSubmit: (submission: PromptSubmission) => void;
   onModelConfigChange: (selection: ModelConfigSelection) => string | Promise<string>;
   onRawModeChange?: (mode: string) => void;
   onInterrupt: () => void;
   onToggleProcessStdout?: () => void;
+  onThemePreview?: (preset: ThemePreset) => void;
+  onThemeRevert?: () => void;
 };
 
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -125,15 +130,19 @@ export const PromptInput = React.memo(function PromptInput({
   placeholder,
   runningProcesses,
   promptDraft,
+  currentPreset,
   onSubmit,
   onModelConfigChange,
   onInterrupt,
   onToggleProcessStdout,
   onRawModeChange,
+  onThemePreview,
+  onThemeRevert,
 }: Props): React.ReactElement {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const theme = useTheme();
+  const { switchTheme, hasCustomThemeConfig } = useAppContext();
   const [buffer, setBuffer] = useState<PromptBufferState>(EMPTY_BUFFER);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<SkillInfo[]>([]);
@@ -143,6 +152,7 @@ export const PromptInput = React.memo(function PromptInput({
   const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
   const [openRawModelDropdown, setOpenRawModelDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const [fileMentionItems, setFileMentionItems] = useState<FileMentionItem[]>(() => scanFileMentionItems(projectRoot));
   const [dismissedFileMentionKey, setDismissedFileMentionKey] = useState<string | null>(null);
   const [hasTerminalFocus, setHasTerminalFocus] = useState(true);
@@ -171,18 +181,19 @@ export const PromptInput = React.memo(function PromptInput({
   const showFileMentionMenu =
     !showSkillsDropdown &&
     !showModelDropdown &&
+    !showThemeDropdown &&
     fileMentionToken !== null &&
     fileMentionKey !== dismissedFileMentionKey;
   const slashItems = React.useMemo(() => buildSlashCommands(skills), [skills]);
   const slashToken = getCurrentSlashToken(buffer);
   const slashMenu = React.useMemo(
     () =>
-      showSkillsDropdown || showModelDropdown || showFileMentionMenu
+      showSkillsDropdown || showModelDropdown || showThemeDropdown || showFileMentionMenu
         ? []
         : slashToken
           ? filterSlashCommands(slashItems, slashToken)
           : [],
-    [showSkillsDropdown, showModelDropdown, showFileMentionMenu, slashToken, slashItems]
+    [showSkillsDropdown, showModelDropdown, showThemeDropdown, showFileMentionMenu, slashToken, slashItems]
   );
   const showMenu = slashMenu.length > 0;
   const promptHistoryKey = React.useMemo(() => promptHistory.join("\0"), [promptHistory]);
@@ -340,7 +351,7 @@ export const PromptInput = React.memo(function PromptInput({
         setPendingExit(false);
       }
 
-      if (openRawModelDropdown || showSkillsDropdown || showModelDropdown) {
+      if (openRawModelDropdown || showSkillsDropdown || showModelDropdown || showThemeDropdown) {
         return;
       }
 
@@ -638,6 +649,12 @@ export const PromptInput = React.memo(function PromptInput({
       setOpenRawModelDropdown(true);
       return;
     }
+    if (item.kind === "theme") {
+      clearSlashToken();
+      setShowSkillsDropdown(false);
+      setShowThemeDropdown(true);
+      return;
+    }
     if (item.kind === "new") {
       onSubmit({ text: "", imageUrls: [], command: "new" });
       resetPromptInput();
@@ -718,8 +735,14 @@ export const PromptInput = React.memo(function PromptInput({
   }
 
   const showFooterText = useMemo(
-    () => showMenu || showSkillsDropdown || openRawModelDropdown || showModelDropdown || showFileMentionMenu,
-    [showMenu, showSkillsDropdown, showModelDropdown, openRawModelDropdown, showFileMentionMenu]
+    () =>
+      showMenu ||
+      showSkillsDropdown ||
+      openRawModelDropdown ||
+      showModelDropdown ||
+      showThemeDropdown ||
+      showFileMentionMenu,
+    [showMenu, showSkillsDropdown, showModelDropdown, openRawModelDropdown, showThemeDropdown, showFileMentionMenu]
   );
 
   const isFocused = useMemo(() => !disabled && hasTerminalFocus, [disabled, hasTerminalFocus]);
@@ -776,6 +799,17 @@ export const PromptInput = React.memo(function PromptInput({
         width={screenWidth}
         onClose={() => setShowModelDropdown(false)}
         onModelConfigChange={onModelConfigChange}
+        onStatusMessage={setStatusMessage}
+      />
+      <ThemeDropdown
+        open={showThemeDropdown}
+        width={screenWidth}
+        hasCustomConfig={hasCustomThemeConfig}
+        currentPreset={currentPreset}
+        onClose={() => setShowThemeDropdown(false)}
+        onThemeChange={(preset: ThemePreset) => switchTheme?.(preset)}
+        onThemePreview={onThemePreview}
+        onThemeRevert={onThemeRevert}
         onStatusMessage={setStatusMessage}
       />
       <FileMentionMenu

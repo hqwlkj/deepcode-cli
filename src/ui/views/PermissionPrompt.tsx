@@ -3,7 +3,7 @@ import { Box, Text } from "ink";
 import { useTerminalInput } from "../hooks";
 import type { AskPermissionRequest, AskPermissionScope, UserToolPermission } from "../../common/permissions";
 import type { PermissionScope } from "../../settings";
-import { useTheme } from "../theme";
+import { useTheme, LIGHT_THEME } from "../theme";
 import type { ThemeTokens } from "../theme";
 
 export type PermissionPromptResult = {
@@ -232,7 +232,7 @@ function isAlwaysAllowedScope(scope: AskPermissionScope): scope is PermissionSco
 }
 
 export function getScopeRiskColor(scope: AskPermissionScope, theme?: ThemeTokens): string {
-  const t = theme ?? ({ success: "#52c41a", warning: "#faad14", error: "#ff4d4f" } as ThemeTokens);
+  const t = theme ?? LIGHT_THEME;
   switch (scope) {
     case "read-in-cwd":
     case "query-git-log":

@@ -1,5 +1,5 @@
 import { type ThemeTokens, type ThemeSettings } from "./types";
-import { DEFAULT_THEME } from "./presets";
+import { LIGHT_THEME, PRESETS } from "./presets";
 
 /**
  * 深度合并两个对象。right 的值覆盖 left。
@@ -25,27 +25,32 @@ function deepMerge<T extends object>(left: T, right: object): T {
 /**
  * 解析主题配置，返回最终的 ThemeTokens。
  *
- * - 未配置 / preset="default"：使用系统默认 DEFAULT_THEME
- * - preset="custom"：使用用户自定义 tokens 或 overrides 合并到 DEFAULT_THEME
+ * - 未配置 / preset="light"：使用浅色主题 LIGHT_THEME
+ * - preset 为预设名称（如 "dark", "monokai", "dracula"）：使用对应预设
+ * - preset="custom"：使用用户自定义 tokens 或 overrides 合并到 LIGHT_THEME
  */
 export function resolveTheme(themeSettings: ThemeSettings | undefined): ThemeTokens {
   if (!themeSettings) {
-    return DEFAULT_THEME;
+    return LIGHT_THEME;
   }
 
-  // preset 不为 "custom" 时使用默认主题
-  if (themeSettings.preset !== "custom") {
-    return DEFAULT_THEME;
+  const { preset } = themeSettings;
+
+  // preset 为预设名称时使用对应预设
+  if (preset && preset !== "custom" && preset in PRESETS) {
+    return PRESETS[preset];
   }
 
   // preset="custom"：应用用户自定义
-  if (themeSettings.tokens) {
-    return deepMerge(DEFAULT_THEME, themeSettings.tokens);
-  }
-  if (themeSettings.overrides) {
-    return deepMerge(DEFAULT_THEME, themeSettings.overrides);
+  if (preset === "custom") {
+    if (themeSettings.tokens) {
+      return deepMerge(LIGHT_THEME, themeSettings.tokens);
+    }
+    if (themeSettings.overrides) {
+      return deepMerge(LIGHT_THEME, themeSettings.overrides);
+    }
   }
 
-  // preset="custom" 但没有提供自定义内容，回退默认
-  return DEFAULT_THEME;
+  // 未配置或无效 preset，回退默认
+  return LIGHT_THEME;
 }

@@ -2,7 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import chalk from "chalk";
 
-import { DEFAULT_THEME, PRESETS } from "../ui/theme";
+import {
+  LIGHT_THEME,
+  DARK_THEME,
+  MONOKAI_THEME,
+  DRACULA_THEME,
+  GITHUB_LIGHT_THEME,
+  GITHUB_DARK_THEME,
+  GITLAB_LIGHT_THEME,
+  GITLAB_DARK_THEME,
+  PRESETS,
+} from "../ui/theme";
 import { resolveTheme } from "../ui/theme";
 import { createThemedChalk } from "../ui/theme";
 import { setCurrentTheme, getCurrentThemedChalk, getCurrentThemeTokens } from "../ui/theme";
@@ -28,6 +38,7 @@ const REQUIRED_TOKEN_KEYS: Array<keyof ThemeTokens> = [
   "info",
   "text",
   "textDim",
+  "textBright",
   "code",
   "border",
   "gradients",
@@ -42,55 +53,78 @@ const DEFAULTS = {
 // Presets
 // ---------------------------------------------------------------------------
 
-test("DEFAULT_THEME has all required token keys", () => {
+test("LIGHT_THEME has all required token keys", () => {
   for (const key of REQUIRED_TOKEN_KEYS) {
-    assert.ok(key in DEFAULT_THEME, `DEFAULT_THEME is missing key: ${key}`);
+    assert.ok(key in LIGHT_THEME, `LIGHT_THEME is missing key: ${key}`);
   }
 });
 
-test("DEFAULT_THEME primary matches expected brand color", () => {
-  assert.equal(DEFAULT_THEME.primary, "#229ac3");
-  assert.equal(DEFAULT_THEME.secondary, "#229ac3e6");
+test("LIGHT_THEME primary matches expected brand color", () => {
+  assert.equal(LIGHT_THEME.primary, "#229ac3");
+  assert.equal(LIGHT_THEME.secondary, "#229ac3e6");
 });
 
-test("DEFAULT_THEME semantic colors match expected values", () => {
-  assert.equal(DEFAULT_THEME.success, "#1a7f37");
-  assert.equal(DEFAULT_THEME.error, "#d1242f");
-  assert.equal(DEFAULT_THEME.warning, "#fa8c16");
-  assert.equal(DEFAULT_THEME.info, "#0969da");
+test("LIGHT_THEME semantic colors match expected values", () => {
+  assert.equal(LIGHT_THEME.success, "#1a7f37");
+  assert.equal(LIGHT_THEME.error, "#d1242f");
+  assert.equal(LIGHT_THEME.warning, "#fa8c16");
+  assert.equal(LIGHT_THEME.info, "#0969da");
 });
 
-test("DEFAULT_THEME base colors match expected values", () => {
-  assert.equal(DEFAULT_THEME.text, "#3D4149");
-  assert.equal(DEFAULT_THEME.textDim, "#646A71");
-  assert.equal(DEFAULT_THEME.code, "#787f8a");
+test("LIGHT_THEME base colors match expected values", () => {
+  assert.equal(LIGHT_THEME.text, "#3D4149");
+  assert.equal(LIGHT_THEME.textDim, "#646A71");
+  assert.equal(LIGHT_THEME.textBright, "#1F2329");
+  assert.equal(LIGHT_THEME.code, "#787f8a");
 });
 
-test("PRESETS map contains default", () => {
-  assert.ok("default" in PRESETS);
-  assert.equal(Object.keys(PRESETS).length, 1);
-  assert.equal(PRESETS.default, DEFAULT_THEME);
+test("PRESETS map contains all presets", () => {
+  assert.ok("light" in PRESETS);
+  assert.ok("dark" in PRESETS);
+  assert.ok("monokai" in PRESETS);
+  assert.ok("dracula" in PRESETS);
+  assert.ok("github-light" in PRESETS);
+  assert.ok("github-dark" in PRESETS);
+  assert.ok("gitlab-light" in PRESETS);
+  assert.ok("gitlab-dark" in PRESETS);
+  assert.equal(Object.keys(PRESETS).length, 8);
+  assert.equal(PRESETS.light, LIGHT_THEME);
+  assert.equal(PRESETS.dark, DARK_THEME);
+  assert.equal(PRESETS.monokai, MONOKAI_THEME);
+  assert.equal(PRESETS.dracula, DRACULA_THEME);
 });
 
 // ---------------------------------------------------------------------------
 // Resolver
 // ---------------------------------------------------------------------------
 
-test("resolveTheme returns DEFAULT_THEME when settings is undefined", () => {
+test("resolveTheme returns LIGHT_THEME when settings is undefined", () => {
   const result = resolveTheme(undefined);
-  assert.equal(result.primary, DEFAULT_THEME.primary);
-  assert.equal(result.success, DEFAULT_THEME.success);
+  assert.equal(result.primary, LIGHT_THEME.primary);
+  assert.equal(result.success, LIGHT_THEME.success);
 });
 
-test("resolveTheme returns DEFAULT_THEME for explicit 'default' preset", () => {
-  const result = resolveTheme({ preset: "default" });
-  assert.equal(result.primary, DEFAULT_THEME.primary);
+test("resolveTheme returns LIGHT_THEME for explicit 'light' preset", () => {
+  const result = resolveTheme({ preset: "light" });
+  assert.equal(result.primary, LIGHT_THEME.primary);
 });
 
-test("resolveTheme returns DEFAULT_THEME when preset is not 'custom'", () => {
-  const result = resolveTheme({ preset: "default" });
-  assert.equal(result.text, DEFAULT_THEME.text);
-  assert.equal(result.primary, DEFAULT_THEME.primary);
+test("resolveTheme returns DARK_THEME for 'dark' preset", () => {
+  const result = resolveTheme({ preset: "dark" });
+  assert.equal(result.primary, DARK_THEME.primary);
+  assert.equal(result.text, DARK_THEME.text);
+});
+
+test("resolveTheme returns MONOKAI_THEME for 'monokai' preset", () => {
+  const result = resolveTheme({ preset: "monokai" });
+  assert.equal(result.primary, MONOKAI_THEME.primary);
+  assert.equal(result.text, MONOKAI_THEME.text);
+});
+
+test("resolveTheme returns DRACULA_THEME for 'dracula' preset", () => {
+  const result = resolveTheme({ preset: "dracula" });
+  assert.equal(result.primary, DRACULA_THEME.primary);
+  assert.equal(result.text, DRACULA_THEME.text);
 });
 
 test("resolveTheme applies overrides when preset is 'custom'", () => {
@@ -99,7 +133,7 @@ test("resolveTheme applies overrides when preset is 'custom'", () => {
     overrides: { primary: "#ff0000" },
   });
   assert.equal(result.primary, "#ff0000");
-  assert.equal(result.success, DEFAULT_THEME.success);
+  assert.equal(result.success, LIGHT_THEME.success);
 });
 
 test("resolveTheme applies multiple overrides with custom preset", () => {
@@ -114,7 +148,7 @@ test("resolveTheme applies multiple overrides with custom preset", () => {
   assert.equal(result.primary, "#ff6600");
   assert.equal(result.success, "greenBright");
   assert.equal(result.warning, "yellowBright");
-  assert.equal(result.error, DEFAULT_THEME.error);
+  assert.equal(result.error, LIGHT_THEME.error);
 });
 
 test("resolveTheme full custom tokens with custom preset", () => {
@@ -127,6 +161,7 @@ test("resolveTheme full custom tokens with custom preset", () => {
     info: "blue",
     text: "blue",
     textDim: "blue",
+    textBright: "blue",
     code: "blue",
     border: "blue",
     gradients: ["#aaaaaa", "#bbbbbb"],
@@ -142,28 +177,28 @@ test("resolveTheme handles override with undefined fields gracefully", () => {
     preset: "custom",
     overrides: { primary: undefined, success: undefined } as Partial<ThemeTokens>,
   });
-  assert.equal(result.primary, DEFAULT_THEME.primary);
-  assert.equal(result.success, DEFAULT_THEME.success);
+  assert.equal(result.primary, LIGHT_THEME.primary);
+  assert.equal(result.success, LIGHT_THEME.success);
 });
 
 test("resolveTheme ignores overrides when preset is not custom", () => {
   const result = resolveTheme({
-    preset: "default",
+    preset: "light",
     overrides: { primary: "#ff0000" },
   });
-  assert.equal(result.primary, DEFAULT_THEME.primary);
+  assert.equal(result.primary, LIGHT_THEME.primary);
 });
 
 test("resolveTheme ignores tokens when preset is not custom", () => {
   const result = resolveTheme({
     tokens: { primary: "#ff0000" } as ThemeTokens,
   });
-  assert.equal(result.primary, DEFAULT_THEME.primary);
+  assert.equal(result.primary, LIGHT_THEME.primary);
 });
 
-test("resolveTheme returns DEFAULT_THEME for custom preset without token/overrides", () => {
+test("resolveTheme returns LIGHT_THEME for custom preset without token/overrides", () => {
   const result = resolveTheme({ preset: "custom" });
-  assert.equal(result.primary, DEFAULT_THEME.primary);
+  assert.equal(result.primary, LIGHT_THEME.primary);
 });
 
 // ---------------------------------------------------------------------------
@@ -171,46 +206,46 @@ test("resolveTheme returns DEFAULT_THEME for custom preset without token/overrid
 // ---------------------------------------------------------------------------
 
 test("createThemedChalk heading1 produces styled output via primary", () => {
-  const tc = createThemedChalk(DEFAULT_THEME);
+  const tc = createThemedChalk(LIGHT_THEME);
   assert.notEqual(tc.heading1("Hello"), "Hello");
 });
 
 test("createThemedChalk heading1 changes when primary changes", () => {
-  const custom: ThemeTokens = { ...DEFAULT_THEME, primary: "#ff0000" };
-  assert.notEqual(createThemedChalk(DEFAULT_THEME).heading1("test"), createThemedChalk(custom).heading1("test"));
+  const custom: ThemeTokens = { ...LIGHT_THEME, primary: "#ff0000" };
+  assert.notEqual(createThemedChalk(LIGHT_THEME).heading1("test"), createThemedChalk(custom).heading1("test"));
 });
 
 test("createThemedChalk inlineCode changes when code changes", () => {
-  const custom: ThemeTokens = { ...DEFAULT_THEME, code: "#ff0000" };
-  assert.notEqual(createThemedChalk(DEFAULT_THEME).inlineCode("test"), createThemedChalk(custom).inlineCode("test"));
+  const custom: ThemeTokens = { ...LIGHT_THEME, code: "#ff0000" };
+  assert.notEqual(createThemedChalk(LIGHT_THEME).inlineCode("test"), createThemedChalk(custom).inlineCode("test"));
 });
 
 test("createThemedChalk listBullet changes when warning changes", () => {
-  const custom: ThemeTokens = { ...DEFAULT_THEME, warning: "#ff0000" };
-  assert.notEqual(createThemedChalk(DEFAULT_THEME).listBullet("test"), createThemedChalk(custom).listBullet("test"));
+  const custom: ThemeTokens = { ...LIGHT_THEME, warning: "#ff0000" };
+  assert.notEqual(createThemedChalk(LIGHT_THEME).listBullet("test"), createThemedChalk(custom).listBullet("test"));
 });
 
 test("createThemedChalk quote changes when textDim changes", () => {
-  const custom: ThemeTokens = { ...DEFAULT_THEME, textDim: "#ff0000" };
-  assert.notEqual(createThemedChalk(DEFAULT_THEME).quote("test"), createThemedChalk(custom).quote("test"));
+  const custom: ThemeTokens = { ...LIGHT_THEME, textDim: "#ff0000" };
+  assert.notEqual(createThemedChalk(LIGHT_THEME).quote("test"), createThemedChalk(custom).quote("test"));
 });
 
 test("createThemedChalk bold / italic / dim produce styled output", () => {
-  const tc = createThemedChalk(DEFAULT_THEME);
+  const tc = createThemedChalk(LIGHT_THEME);
   assert.notEqual(tc.bold("bold"), "bold");
   assert.notEqual(tc.italic("italic"), "italic");
   assert.notEqual(tc.dim("dim"), "dim");
 });
 
 test("createThemedChalk produces different output for different primary values", () => {
-  const custom1: ThemeTokens = { ...DEFAULT_THEME, primary: "#ff0000" };
-  const custom2: ThemeTokens = { ...DEFAULT_THEME, primary: "#00ff00" };
+  const custom1: ThemeTokens = { ...LIGHT_THEME, primary: "#ff0000" };
+  const custom2: ThemeTokens = { ...LIGHT_THEME, primary: "#00ff00" };
   assert.notEqual(createThemedChalk(custom1).primary("test"), createThemedChalk(custom2).primary("test"));
 });
 
 test("createThemedChalk handles hex colors correctly", () => {
   const hexTheme: ThemeTokens = {
-    ...DEFAULT_THEME,
+    ...LIGHT_THEME,
     primary: "#ff6600",
     warning: "#ffcc00",
     code: "#00ccff",
@@ -224,33 +259,33 @@ test("createThemedChalk handles hex colors correctly", () => {
 // current-theme (module-level state)
 // ---------------------------------------------------------------------------
 
-test("getCurrentThemedChalk returns DEFAULT_THEME chalk by default", () => {
-  setCurrentTheme(DEFAULT_THEME);
+test("getCurrentThemedChalk returns LIGHT_THEME chalk by default", () => {
+  setCurrentTheme(LIGHT_THEME);
   assert.notEqual(getCurrentThemedChalk().primary("test"), "test");
 });
 
 test("setCurrentTheme changes getCurrentThemedChalk output", () => {
-  setCurrentTheme(DEFAULT_THEME);
+  setCurrentTheme(LIGHT_THEME);
   const first = getCurrentThemedChalk().primary("test");
 
-  const custom: ThemeTokens = { ...DEFAULT_THEME, primary: "#ff0000" };
+  const custom: ThemeTokens = { ...LIGHT_THEME, primary: "#ff0000" };
   setCurrentTheme(custom);
   const second = getCurrentThemedChalk().primary("test");
 
   assert.notEqual(first, second);
 
-  setCurrentTheme(DEFAULT_THEME);
+  setCurrentTheme(LIGHT_THEME);
 });
 
 test("setCurrentTheme changes getCurrentThemeTokens output", () => {
-  setCurrentTheme(DEFAULT_THEME);
-  assert.equal(getCurrentThemeTokens().primary, DEFAULT_THEME.primary);
+  setCurrentTheme(LIGHT_THEME);
+  assert.equal(getCurrentThemeTokens().primary, LIGHT_THEME.primary);
 
-  const custom: ThemeTokens = { ...DEFAULT_THEME, primary: "#ff0000" };
+  const custom: ThemeTokens = { ...LIGHT_THEME, primary: "#ff0000" };
   setCurrentTheme(custom);
   assert.equal(getCurrentThemeTokens().primary, "#ff0000");
 
-  setCurrentTheme(DEFAULT_THEME);
+  setCurrentTheme(LIGHT_THEME);
 });
 
 // ---------------------------------------------------------------------------
@@ -260,7 +295,7 @@ test("setCurrentTheme changes getCurrentThemeTokens output", () => {
 test("resolveSettingsSources includes theme field in resolved settings", () => {
   const result = resolveSettingsSources(null, null, DEFAULTS, {});
   assert.ok("theme" in result);
-  assert.equal(result.theme.primary, DEFAULT_THEME.primary);
+  assert.equal(result.theme.primary, LIGHT_THEME.primary);
 });
 
 test("resolveSettingsSources resolves custom theme from user settings", () => {
@@ -285,12 +320,12 @@ test("resolveSettingsSources resolves custom theme from project settings", () =>
 
 test("resolveSettingsSources uses default theme when preset is not custom", () => {
   const result = resolveSettingsSources(
-    { theme: { preset: "default", overrides: { primary: "#abcdef" } } },
+    { theme: { preset: "light", overrides: { primary: "#abcdef" } } },
     null,
     DEFAULTS,
     {}
   );
-  assert.equal(result.theme.primary, DEFAULT_THEME.primary);
+  assert.equal(result.theme.primary, LIGHT_THEME.primary);
 });
 
 // ---------------------------------------------------------------------------
@@ -298,9 +333,9 @@ test("resolveSettingsSources uses default theme when preset is not custom", () =
 // ---------------------------------------------------------------------------
 
 test("getScopeRiskColor returns default theme colors when no theme is passed", () => {
-  assert.equal(getScopeRiskColor("read-in-cwd"), "#52c41a");
-  assert.equal(getScopeRiskColor("write-in-cwd"), "#faad14");
-  assert.equal(getScopeRiskColor("write-out-cwd"), "#ff4d4f");
+  assert.equal(getScopeRiskColor("read-in-cwd"), LIGHT_THEME.success);
+  assert.equal(getScopeRiskColor("write-in-cwd"), LIGHT_THEME.warning);
+  assert.equal(getScopeRiskColor("write-out-cwd"), LIGHT_THEME.error);
 });
 
 test("getScopeRiskColor uses theme semantic colors when theme is provided", () => {

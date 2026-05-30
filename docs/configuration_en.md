@@ -127,6 +127,85 @@ Configuration for MCP (Model Context Protocol) servers. The value is a key-value
 
 For detailed MCP usage instructions, refer to [mcp.md](mcp.md).
 
+#### `theme` — Theme Configuration
+
+Deep Code supports customizing theme colors to make your terminal interface match your personal preferences.
+
+**Using Preset Themes**
+
+```json
+{
+  "theme": {
+    "preset": "dark"
+  }
+}
+```
+
+Available preset themes:
+
+| Preset Name     | Description                              |
+| --------------- | ---------------------------------------- |
+| `light`         | Light theme (default, optimized for light backgrounds) |
+| `dark`          | Dark theme (optimized for dark backgrounds) |
+| `github-light`  | GitHub Light style theme                 |
+| `github-dark`   | GitHub Dark style theme                  |
+| `gitlab-light`  | GitLab Light style theme                 |
+| `gitlab-dark`   | GitLab Dark style theme                  |
+| `monokai`       | Monokai-style theme                      |
+| `dracula`       | Dracula-style theme                      |
+
+**Custom Theme Colors**
+
+Use `preset: "custom"` with `overrides` to customize specific colors:
+
+```json
+{
+  "theme": {
+    "preset": "custom",
+    "overrides": {
+      "primary": "#ff6600",
+      "success": "greenBright"
+    }
+  }
+}
+```
+
+**Available Color Tokens**
+
+| Token        | Description                                      | Default Value |
+| ------------ | ------------------------------------------------ | ------------- |
+| `primary`    | Brand color: logo, user messages, selected items, headings | `#229ac3`  |
+| `secondary`  | Auxiliary brand color: borders, gradients        | `#229ac3e6`  |
+| `success`    | Success: tool execution success, low-risk ops    | `#1a7f37`    |
+| `error`      | Error: tool execution failure, high-risk ops     | `#d1242f`    |
+| `warning`    | Warning: in-progress state, mid-risk ops         | `#fa8c16`    |
+| `info`       | Info: skills, image attachments                  | `#0969da`    |
+| `text`       | Main text color                                  | `#3D4149`    |
+| `textDim`    | Secondary text: dimmed hints, quote blocks       | `#646A71`    |
+| `textBright` | Bright text: emphasized hints                    | `#1F2329`    |
+| `code`       | Code blocks / inline code                        | `#787f8a`    |
+| `border`     | Borders                                          | `#999`       |
+| `gradients`  | Logo gradient color array                        | `["#229ac3", "#8250df"]` |
+
+Color values support the following formats:
+- Hex format: `"#ff6600"`, `"#ff6600cc"` (with alpha)
+- Chalk named colors: `"greenBright"`, `"cyanBright"`, `"red"`, etc.
+
+**Runtime Theme Switching**
+
+Use the `/theme` command in the CLI to quickly switch preset themes:
+
+```
+/theme                # Show theme picker
+/theme dark           # Switch to dark theme
+/theme light          # Switch back to light theme
+/theme github-dark    # Switch to GitHub Dark theme
+/theme gitlab-light   # Switch to GitLab Light theme
+/theme monokai        # Switch to Monokai theme
+```
+
+The switch is automatically saved to `settings.json` and will take effect on the next launch.
+
 #### `debugLogEnabled` — Debug Log
 
 Set to `true` to enable detailed debug logging (default `false`), useful for troubleshooting API calls and tool execution.

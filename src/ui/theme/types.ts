@@ -34,7 +34,16 @@ export interface ThemeTokens {
 }
 
 /** 预设主题名称 */
-export type ThemePreset = "default" | "custom";
+export type ThemePreset =
+  | "light"
+  | "dark"
+  | "monokai"
+  | "dracula"
+  | "github-light"
+  | "github-dark"
+  | "gitlab-light"
+  | "gitlab-dark"
+  | "custom";
 
 /** 主题配置（用户可配置部分） */
 export type ThemeSettings = {

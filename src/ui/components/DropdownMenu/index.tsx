@@ -10,10 +10,14 @@ export type DropdownMenuItem = {
   key: string;
   /** Main label text (can include status indicators) */
   label: string;
+  /** Custom color for the label text */
+  labelColor?: string;
   /** Secondary description text (dimmed) */
   description?: string;
   /** Whether this item is currently selected */
   selected?: boolean;
+  /** Whether this item is disabled (cannot be selected) */
+  disabled?: boolean;
   /** Whether to show a special status indicator (e.g., loaded checkmark) */
   statusIndicator?: {
     symbol: string;
@@ -156,18 +160,28 @@ const DropdownMenu = React.memo(function DropdownMenu({
           }
 
           // Default rendering with selection indicator and optional features
+          const labelColor = item.disabled ? undefined : isActive ? effectiveActiveColor : item.labelColor;
+
           return (
             <Box key={item.key} flexGrow={1} flexDirection="row" gap={2} paddingX={1}>
               <Box width={labelColumnWidth} flexShrink={0}>
-                <Text color={isActive ? effectiveActiveColor : undefined} wrap="truncate-end">
-                  {isActive ? "> " : "  "}
-                  {item.selected !== undefined ? (item.selected ? "●" : "○") : null} <Text>{item.label}</Text>
+                <Text color={labelColor} dimColor={item.disabled} wrap="truncate-end">
+                  {isActive && !item.disabled ? "> " : "  "}
+                  {item.selected !== undefined ? (item.selected ? "●" : "○") : null}{" "}
+                  <Text color={item.disabled ? undefined : item.labelColor}>{item.label}</Text>
                   {item.statusIndicator ? (
                     <Text color={item.statusIndicator.color}> {item.statusIndicator.symbol}</Text>
                   ) : null}
                 </Text>
               </Box>
-              <Box flexGrow={1}>{item.description ? <Text dimColor>{`${item.description}`}</Text> : null}</Box>
+              <Box flexGrow={1}>
+                {item.description ? (
+                  <Text
+                    dimColor={!item.disabled}
+                    color={item.disabled ? "gray" : undefined}
+                  >{`${item.description}`}</Text>
+                ) : null}
+              </Box>
             </Box>
           );
         })}

@@ -1,9 +1,9 @@
-import { DEFAULT_THEME } from "./presets";
+import { LIGHT_THEME } from "./presets";
 import { createThemedChalk, type ThemedChalk } from "./chalk-theme";
 import type { ThemeTokens } from "./types";
 
-let currentThemedChalk: ThemedChalk = createThemedChalk(DEFAULT_THEME);
-let currentThemeTokens: ThemeTokens = DEFAULT_THEME;
+let currentThemedChalk: ThemedChalk = createThemedChalk(LIGHT_THEME);
+let currentThemeTokens: ThemeTokens = LIGHT_THEME;
 
 /** 设置当前主题（在 AppContainer 中调用一次） */
 export function setCurrentTheme(theme: ThemeTokens): void {

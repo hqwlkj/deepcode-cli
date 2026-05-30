@@ -145,3 +145,40 @@ export function buildExitSummaryText(input: ExitSummaryInput): string {
 
   return [top, body, bottom].join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Structured exit summary for React rendering
+// ---------------------------------------------------------------------------
+
+export type ExitSummaryRow = {
+  modelName: string;
+  reqs: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+};
+
+export type ExitSummaryData = {
+  rows: ExitSummaryRow[];
+  hasUsage: boolean;
+};
+
+export function buildExitSummaryData(input: ExitSummaryInput): ExitSummaryData {
+  const { session } = input;
+
+  const rows = Object.entries(session?.usagePerModel ?? {})
+    .map(([modelName, usage]) => {
+      const fields = extractUsageFields(usage);
+      return {
+        modelName,
+        reqs: fields.totalReqs,
+        inputTokens: fields.promptTokens,
+        outputTokens: fields.completionTokens,
+        cachedTokens: fields.cachedTokens,
+      };
+    })
+    .filter((row) => row.reqs > 0 || row.inputTokens > 0 || row.outputTokens > 0 || row.cachedTokens > 0)
+    .sort((left, right) => right.reqs - left.reqs || left.modelName.localeCompare(right.modelName));
+
+  return { rows, hasUsage: rows.length > 0 };
+}

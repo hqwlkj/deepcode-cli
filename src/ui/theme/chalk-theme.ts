@@ -39,6 +39,7 @@ export interface ThemedChalk {
   secondary: (text: string) => string;
   text: (text: string) => string;
   textDim: (text: string) => string;
+  textBright: (text: string) => string;
   success: (text: string) => string;
   error: (text: string) => string;
   warning: (text: string) => string;
@@ -50,6 +51,7 @@ export function createThemedChalk(theme: ThemeTokens): ThemedChalk {
   const se = chalkColor(theme.secondary);
   const tx = chalkColor(theme.text);
   const td = chalkColor(theme.textDim);
+  const tb = chalkColor(theme.textBright);
   const cd = chalkColor(theme.code);
   const sc = chalkColor(theme.success);
   const er = chalkColor(theme.error);
@@ -74,6 +76,7 @@ export function createThemedChalk(theme: ThemeTokens): ThemedChalk {
     secondary: (text: string) => se(text),
     text: (text: string) => tx(text),
     textDim: (text: string) => td(text),
+    textBright: (text: string) => tb(text),
     success: (text: string) => sc(text),
     error: (text: string) => er(text),
     warning: (text: string) => wr(text),
