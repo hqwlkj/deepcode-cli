@@ -42,6 +42,7 @@ if (args.includes("--help") || args.includes("-h")) {
       "  esc              Interrupt the current model turn",
       "  /                Open the skills/commands menu",
       "  /skills          List available skills",
+      "  /theme           Change the theme",
       "  /model           Select model, thinking mode and effort control",
       "  /new             Start a fresh conversation",
       "  /init            Initialize an AGENTS.md file with instructions for LLM",
