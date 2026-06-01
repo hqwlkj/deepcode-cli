@@ -71,6 +71,7 @@ Deep Code CLI supports agent skills that allow you to extend the assistant's cap
 | `/resume`        | Choose a previous conversation to continue              |
 | `/continue`      | Continue the active conversation or pick one to resume  |
 | `/model`         | Switch model, thinking mode, and reasoning effort       |
+| `/theme`         | Open theme picker with live preview                     |
 | `/raw`           | Toggle display mode (Normal / Lite / Raw scrollback)    |
 | `/init`          | Initialize an AGENTS.md file (LLM project instructions) |
 | `/skills`        | List available skills                                   |

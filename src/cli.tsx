@@ -44,7 +44,7 @@ if (args.includes("--help") || args.includes("-h")) {
       "  /skills          List available skills",
       "  /theme           Change the theme",
       "  /model           Select model, thinking mode and effort control",
-      "  /new             Start a fresh conversation",
+      "  /new             Start a new session (previous session resumable with /resume)",
       "  /init            Initialize an AGENTS.md file with instructions for LLM",
       "  /resume          Pick a previous conversation to continue",
       "  /continue        Continue the active conversation, or resume one if empty",
@@ -98,9 +98,12 @@ async function main(): Promise<void> {
 
     restartRef.current = () => {
       restarting = true;
-      process.stdout.write("\u001B[2J\u001B[3J\u001B[H");
       inkInstance.unmount();
-      startApp();
+      // waitUntilExit 在 Ink 完成终端清理后 resolve，比 setTimeout 更精确。
+      void inkInstance.waitUntilExit().then(() => {
+        process.stdout.write("\u001B[2J\u001B[3J\u001B[H");
+        startApp();
+      });
     };
 
     inkInstance.waitUntilExit().then(() => {

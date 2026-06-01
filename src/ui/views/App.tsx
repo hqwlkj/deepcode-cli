@@ -55,7 +55,7 @@ type AppProps = {
   onRestart?: () => void;
 };
 
-function App({ projectRoot, initialPrompt }: AppProps): React.ReactElement {
+function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.ReactElement {
   const { exit } = useApp();
   const { stdout, write } = useStdout();
   const { columns, rows } = useWindowSize();
@@ -277,11 +277,14 @@ function App({ projectRoot, initialPrompt }: AppProps): React.ReactElement {
         return;
       }
       if (submission.command === "new") {
-        // if (onRestart) {
-        //   onRestart();
-        // }
-        await resetToWelcome();
-        refreshSessionsList();
+        if (onRestart) {
+          // 生产环境：完全销毁重建 Ink 实例，清屏最可靠
+          onRestart();
+        } else {
+          // 测试环境：在同一实例内重置状态
+          await resetToWelcome();
+          refreshSessionsList();
+        }
         return;
       }
       if (submission.command === "resume") {
@@ -358,7 +361,15 @@ function App({ projectRoot, initialPrompt }: AppProps): React.ReactElement {
         setRunningProcesses(null);
       }
     },
-    [sessionManager, pendingPermissionReply, refreshSkills, refreshSessionsList, navigateToSubView, resetToWelcome]
+    [
+      sessionManager,
+      pendingPermissionReply,
+      onRestart,
+      refreshSkills,
+      refreshSessionsList,
+      navigateToSubView,
+      resetToWelcome,
+    ]
   );
 
   const handleInterrupt = useCallback(() => {
@@ -431,6 +442,7 @@ function App({ projectRoot, initialPrompt }: AppProps): React.ReactElement {
 
   const reloadActiveSessionView = useCallback(
     (sessionId: string): void => {
+      process.stdout.write(ANSI_CLEAR_SCREEN);
       resetStaticView(loadVisibleMessages(sessionManager, sessionId));
     },
     [resetStaticView, sessionManager]
@@ -452,6 +464,7 @@ function App({ projectRoot, initialPrompt }: AppProps): React.ReactElement {
   const handleSelectSession = useCallback(
     async (sessionId: string) => {
       sessionManager.setActiveSessionId(sessionId);
+      process.stdout.write(ANSI_CLEAR_SCREEN);
       resetStaticView(loadVisibleMessages(sessionManager, sessionId));
       const session = sessionManager.getSession(sessionId);
       setStatusLine(session ? buildStatusLine(session) : "");

@@ -70,6 +70,7 @@ Deep Code CLI 支持 agent skills，允许您扩展助手的能力：
 | `/resume`   | 选择历史对话继续                         |
 | `/continue` | 继续当前对话，或选择历史对话恢复                 |
 | `/model`    | 切换模型、思考模式和推理强度                   |
+| `/theme`    | 打开主题选择器，实时预览并切换主题                  |
 | `/raw`      | 切换显示模式（Normal / Lite / Raw 滚动回溯） |
 | `/init`     | 初始化 AGENTS.md 文件                 |
 | `/skills`   | 列出可用 skills                      |

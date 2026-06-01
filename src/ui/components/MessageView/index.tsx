@@ -46,13 +46,13 @@ export function MessageView({ message, collapsed, width = 80 }: MessageViewProps
       if (collapsed !== false) {
         return (
           <Box marginLeft={1} marginBottom={1} marginY={0}>
-            <StatusLine width={width} bulletColor={theme.primary} name="Thinking" params={summary} />
+            <StatusLine width={width} bulletColor={theme.textDim} name="Thinking" params={summary} />
           </Box>
         );
       }
       return (
         <Box marginLeft={1} flexDirection="column" marginBottom={1} marginY={0}>
-          <StatusLine width={width} bulletColor={theme.primary} name="Thinking" params={content ? "" : summary} />
+          <StatusLine width={width} bulletColor={theme.textDim} name="Thinking" params={content ? "" : summary} />
           <Box flexDirection="column" marginLeft={2}>
             {content ? <Text dimColor>{renderMarkdown(content)}</Text> : null}
           </Box>
@@ -174,7 +174,7 @@ function StatusLine({
             {name}
           </Text>
           {params ? (
-            <Text key="params" color={theme.textDim}>
+            <Text key="params" color={theme.text}>
               {` ${params}`}
             </Text>
           ) : null}
