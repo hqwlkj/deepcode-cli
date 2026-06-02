@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { AppContext } from "../contexts";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppContext, RawModeProvider } from "../contexts";
 import App from "./App";
-import { RawModeProvider } from "../contexts";
-import { ThemeProvider, setCurrentTheme, resolveTheme } from "../theme";
-import { resolveCurrentSettings, readSettings, readProjectSettings, writeSettings } from "../../settings";
-import type { ThemeTokens, ThemePreset, ThemeSettings } from "../theme";
+import type { ThemePreset, ThemeTokens } from "../theme";
+import { ThemeManager, ThemeProvider } from "../theme";
+import { readProjectSettings, readSettings, resolveCurrentSettings } from "../../settings";
 
 const AppContainer: React.FC<{
   projectRoot: string;
@@ -21,6 +20,43 @@ const AppContainer: React.FC<{
   });
   const [themeVersion, setThemeVersion] = useState(0);
 
+  // ThemeManager 实例（随 projectRoot 变化重建）
+  const managerRef = useRef<ThemeManager | null>(null);
+  const getManager = useCallback(() => {
+    if (!managerRef.current) {
+      managerRef.current = new ThemeManager(projectRoot);
+    }
+    return managerRef.current;
+  }, [projectRoot]);
+
+  // 监听主题变更，同步到 React 状态
+  useEffect(() => {
+    const manager = getManager();
+    return manager.onChange((newTheme, preset) => {
+      setTheme(newTheme);
+      setCurrentPreset(preset);
+      setThemeVersion((v) => v + 1);
+    });
+  }, [getManager]);
+
+  // 同步全局 chalk 主题
+  useEffect(() => {
+    const manager = getManager();
+    setTheme(manager.getTheme());
+  }, [getManager]);
+
+  // 启动：异步检测终端背景 → 刷新主题 → 开始轮询
+  useEffect(() => {
+    const manager = getManager();
+    void manager.init().then(() => {
+      manager.startPolling();
+    });
+    return () => {
+      manager.dispose();
+      managerRef.current = null;
+    };
+  }, [projectRoot, getManager]);
+
   // 检查是否有 custom 主题配置
   const hasCustomThemeConfig = useMemo(() => {
     const userSettings = readSettings();
@@ -29,63 +65,23 @@ const AppContainer: React.FC<{
     return themeSettings?.preset === "custom" && !!(themeSettings?.overrides || themeSettings?.tokens);
   }, [projectRoot]);
 
-  useEffect(() => {
-    // 初始设置全局 chalk 主题
-    setCurrentTheme(theme);
-  }, [theme]);
-
-  /** 应用主题到 UI（不持久化） */
-  const applyThemeToUI = useCallback((newTheme: ThemeTokens) => {
-    setTheme(newTheme);
-    setCurrentTheme(newTheme);
-    setThemeVersion((v) => v + 1);
-  }, []);
-
-  /** 预览主题：仅切换 UI，不保存到 settings，不更新 currentPreset */
   const previewTheme = useCallback(
     (presetOrTokens: string | Partial<ThemeTokens>) => {
-      const newTheme = resolveTheme(
-        typeof presetOrTokens === "string"
-          ? { preset: presetOrTokens as ThemePreset }
-          : { preset: "custom", overrides: presetOrTokens }
-      );
-      applyThemeToUI(newTheme);
+      getManager().previewTheme(presetOrTokens);
     },
-    [applyThemeToUI]
+    [getManager]
   );
 
-  /** 切换主题并持久化到 settings.json */
   const switchTheme = useCallback(
     (presetOrTokens: string | Partial<ThemeTokens>) => {
-      const preset: ThemePreset = typeof presetOrTokens === "string" ? (presetOrTokens as ThemePreset) : "custom";
-      const newTheme = resolveTheme(
-        typeof presetOrTokens === "string"
-          ? { preset: presetOrTokens as ThemePreset }
-          : { preset: "custom", overrides: presetOrTokens }
-      );
-
-      setCurrentPreset(preset);
-      applyThemeToUI(newTheme);
-
-      // 持久化到 settings.json
-      const currentSettings = readSettings() ?? {};
-      const newThemeSettings: ThemeSettings = {
-        preset,
-        ...(typeof presetOrTokens !== "string" ? { overrides: presetOrTokens } : {}),
-      };
-      writeSettings({ ...currentSettings, theme: newThemeSettings });
+      getManager().switchTheme(presetOrTokens);
     },
-    [applyThemeToUI]
+    [getManager]
   );
 
-  /** 回退到 settings 中已保存的主题 */
   const revertTheme = useCallback(() => {
-    const savedSettings = resolveCurrentSettings(projectRoot);
-    const userSettings = readSettings();
-    const projectSettings = readProjectSettings(projectRoot);
-    setCurrentPreset((userSettings?.theme?.preset ?? projectSettings?.theme?.preset ?? "light") as ThemePreset);
-    applyThemeToUI(savedSettings.theme);
-  }, [projectRoot, applyThemeToUI]);
+    getManager().revertTheme();
+  }, [getManager]);
 
   return (
     <AppContext.Provider

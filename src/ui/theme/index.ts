@@ -13,6 +13,7 @@ export {
   PRESETS,
 } from "./presets";
 export { resolveTheme } from "./resolver";
+export { ThemeManager } from "./ThemeManager";
 export { ThemeProvider, useTheme } from "./ThemeContext";
 export { createThemedChalk } from "./chalk-theme";
 export type { ThemedChalk } from "./chalk-theme";

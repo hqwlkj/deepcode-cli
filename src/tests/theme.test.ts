@@ -82,7 +82,8 @@ test("LIGHT_THEME text colors match expected values", () => {
   assert.equal(LIGHT_THEME.text.primary, "#1F2328");
   assert.equal(LIGHT_THEME.text.secondary, "#46484b");
   assert.equal(LIGHT_THEME.text.muted, "#8b949e");
-  assert.equal(LIGHT_THEME.text.inverse, "#1F2328");
+  // inverse = 背景色，用于深色背景上的反色文字
+  assert.equal(LIGHT_THEME.text.inverse, "#ffffff");
 });
 
 test("PRESETS map contains all presets", () => {
@@ -119,19 +120,22 @@ test("resolveTheme returns LIGHT_THEME for explicit 'light' preset", () => {
 test("resolveTheme returns DARK_THEME for 'dark' preset", () => {
   const result = resolveTheme({ preset: "dark" });
   assert.equal(result.brand.primary, DARK_THEME.brand.primary);
-  assert.equal(result.text.primary, DARK_THEME.text.primary);
+  assert.equal(result.status.success, DARK_THEME.status.success);
+  assert.equal(result.mode, "dark");
 });
 
 test("resolveTheme returns MONOKAI_THEME for 'monokai' preset", () => {
   const result = resolveTheme({ preset: "monokai" });
   assert.equal(result.brand.primary, MONOKAI_THEME.brand.primary);
-  assert.equal(result.text.primary, MONOKAI_THEME.text.primary);
+  assert.equal(result.status.success, MONOKAI_THEME.status.success);
+  assert.equal(result.mode, "dark");
 });
 
 test("resolveTheme returns DRACULA_THEME for 'dracula' preset", () => {
   const result = resolveTheme({ preset: "dracula" });
   assert.equal(result.brand.primary, DRACULA_THEME.brand.primary);
-  assert.equal(result.text.primary, DRACULA_THEME.text.primary);
+  assert.equal(result.status.success, DRACULA_THEME.status.success);
+  assert.equal(result.mode, "dark");
 });
 
 test("resolveTheme applies overrides when preset is 'custom'", () => {
@@ -178,9 +182,8 @@ test("resolveTheme custom with base='dark' merges overrides onto DARK_THEME", ()
   });
   // brand.primary should be overridden
   assert.equal(result.brand.primary, "#ff0000");
-  // other tokens should come from DARK_THEME
+  // mode and status should come from DARK_THEME (not affected by terminal contrast)
   assert.equal(result.mode, "dark");
-  assert.equal(result.text.primary, DARK_THEME.text.primary);
   assert.equal(result.status.success, DARK_THEME.status.success);
 });
 

@@ -1,4 +1,5 @@
 import type { ThemeTokens } from "./types";
+import type { DetectedTheme } from "./detect-system-theme";
 
 /**
  * 用户配置的简化主题色板。
@@ -56,23 +57,45 @@ function dimHex(hex: string, ratio: number): string {
 
 /**
  * 从 ColorsTheme 推导完整的 ThemeTokens。
+ *
+ * @param c 自定义主题色板
+ * @param mode 主题模式
+ * @param name 主题显示名称
+ * @param terminalBackground - 终端实际背景色（可选）。当与 mode 不匹配时，
+ *   自动反转文字色以确保对比度。例如 light 主题 + 深色终端 → 文字变亮。
  */
-export function buildThemeTokens(c: ColorsTheme, mode: "light" | "dark", name: string): ThemeTokens {
+export function buildThemeTokens(
+  c: ColorsTheme,
+  mode: DetectedTheme,
+  name: string,
+  terminalBackground?: DetectedTheme
+): ThemeTokens {
   const gradient = c.GradientColors ?? [c.AccentBlue, c.AccentPurple];
+
+  // 判断是否需要反转文字色
+  const bgMismatch = terminalBackground && terminalBackground !== mode;
+  const needInvert = bgMismatch ?? false;
+
+  // 文字色：当终端背景与主题模式不匹配时反转，确保对比度
+  // fg = 当前终端上实际使用的前景色
+  // inverse = fg 的反色（用于 badge、高亮等需要反差的场景）
+  // muted/disabled = 中性色，深浅背景上都可读
+  const fg = needInvert ? c.Background : c.Foreground;
+  const inv = needInvert ? c.Foreground : c.Background;
 
   return {
     name,
     mode,
     text: {
-      primary: c.Foreground,
-      secondary: dimHex(c.Foreground, 0.4),
+      primary: fg,
+      secondary: dimHex(fg, 0.4),
       muted: c.Gray,
       disabled: dimHex(c.Gray, 0.5),
-      inverse: mode === "dark" ? c.Background : c.Foreground,
+      inverse: inv,
     },
     border: {
-      default: dimHex(c.Foreground, 0.7),
-      subtle: dimHex(c.Foreground, 0.85),
+      default: dimHex(fg, 0.7),
+      subtle: dimHex(fg, 0.85),
       active: c.AccentBlue,
       focus: c.AccentBlue,
     },
@@ -109,9 +132,9 @@ export function buildThemeTokens(c: ColorsTheme, mode: "light" | "dark", name: s
       h4: c.AccentBlue,
       h5: c.AccentBlue,
       h6: c.AccentBlue,
-      paragraph: c.Foreground,
-      strong: c.Foreground,
-      emphasis: c.Foreground,
+      paragraph: fg,
+      strong: fg,
+      emphasis: fg,
       delete: c.AccentRed,
     },
     link: {
@@ -122,13 +145,13 @@ export function buildThemeTokens(c: ColorsTheme, mode: "light" | "dark", name: s
     inlineCode: {
       foreground: c.AccentBlue,
       background: dimHex(c.Background, 0.08),
-      border: dimHex(c.Foreground, 0.7),
+      border: dimHex(fg, 0.7),
     },
     codeBlock: {
-      foreground: c.Foreground,
+      foreground: fg,
       background: mode === "dark" ? dimHex(c.Background, 0.15) : dimHex(c.Background, 0.05),
-      border: dimHex(c.Foreground, 0.7),
-      title: c.Foreground,
+      border: dimHex(fg, 0.7),
+      title: fg,
       lineNumber: c.Gray,
       highlight: mode === "dark" ? "#2d333b" : "#fff8c5",
     },
@@ -141,14 +164,14 @@ export function buildThemeTokens(c: ColorsTheme, mode: "light" | "dark", name: s
       type: mode === "dark" ? "#ffa657" : "#953800",
       number: c.AccentCyan,
       operator: c.AccentRed,
-      punctuation: c.Foreground,
+      punctuation: fg,
       comment: c.Comment,
       regexp: c.AccentGreen,
       constant: c.AccentCyan,
     },
     blockquote: {
       foreground: c.Gray,
-      border: dimHex(c.Foreground, 0.7),
+      border: dimHex(fg, 0.7),
     },
     list: {
       bullet: c.AccentYellowDim,
@@ -157,15 +180,15 @@ export function buildThemeTokens(c: ColorsTheme, mode: "light" | "dark", name: s
     },
     task: {
       checked: c.AccentGreen,
-      unchecked: dimHex(c.Foreground, 0.7),
+      unchecked: dimHex(fg, 0.7),
     },
     table: {
-      border: dimHex(c.Foreground, 0.7),
-      headerForeground: c.Foreground,
+      border: dimHex(fg, 0.7),
+      headerForeground: fg,
       headerBackground: dimHex(c.Background, 0.08),
-      cellForeground: c.Foreground,
+      cellForeground: fg,
     },
-    hr: { foreground: dimHex(c.Foreground, 0.7) },
+    hr: { foreground: dimHex(fg, 0.7) },
     admonition: {
       note: c.LightBlue,
       tip: c.AccentGreen,

@@ -211,45 +211,15 @@ Advanced: use `base` to inherit from another preset, with `overrides` to tweak:
 }
 ```
 
-**Available Color Token Groups**
-
-| Group | Description | Tokens |
-| ----- | ----------- | ------ |
-| `text` | Text hierarchy | `primary`, `secondary`, `muted`, `disabled`, `inverse` |
-| `border` | Border hierarchy | `default`, `subtle`, `active`, `focus` |
-| `surface` | Surface colors | `default`, `elevated`, `muted`, `code`, `panel`, `quote`, `selection` |
-| `brand` | Brand colors | `primary`, `secondary`, `accent` |
-| `status` | Status colors | `success`, `warning`, `danger`, `info` |
-| `risk` | Risk levels | `low`, `medium`, `high`, `critical` |
-| `typography` | Typography colors | `h1`-`h6`, `paragraph`, `strong`, `emphasis`, `delete` |
-| `link` | Link colors | `default`, `visited`, `hover` |
-| `inlineCode` | Inline code | `foreground`, `background`, `border` |
-| `codeBlock` | Code blocks | `foreground`, `background`, `border`, `title`, `lineNumber`, `highlight` |
-| `syntax` | Syntax highlighting | `keyword`, `string`, `function`, `variable`, `property`, `type`, `number`, `operator`, `punctuation`, `comment`, `regexp`, `constant` |
-| `blockquote` | Blockquotes | `foreground`, `border` |
-| `list` | Lists | `bullet`, `ordered`, `marker` |
-| `task` | Task lists | `checked`, `unchecked` |
-| `table` | Tables | `border`, `headerForeground`, `headerBackground`, `cellForeground` |
-| `hr` | Horizontal rules | `foreground` |
-| `admonition` | Admonitions | `note`, `tip`, `warning`, `important`, `caution` |
-| `diff` | Diff | `added`, `removed`, `modified`, `addedBackground`, `removedBackground`, `modifiedBackground` |
-| `agent` | Agent states | `thinking`, `reasoning`, `toolCall`, `toolResult`, `streaming`, `completed` |
-| `approval` | Approval | `allow`, `deny`, `review` |
-| `gradients` | Gradients | `banner`, `logo`, `thinking` (each is a color array) |
-
-Color values support the following formats:
-- Hex format: `"#ff6600"`, `"#ff6600cc"` (with alpha)
-- Chalk named colors: `"greenBright"`, `"cyanBright"`, `"red"`, etc.
-
 **Runtime Theme Switching**
 
-Use the `/theme` command in the CLI to open the theme picker. Browse with arrow keys and confirm with Space or Enter:
+In the CLI, use the `/theme` command to open the theme picker. Browse with arrow keys, confirm with Space or Enter:
 
 ```
 /theme    # Open theme picker
 ```
 
-Available themes in the picker match the table above. The theme is previewed in real-time as you browse. Press Esc to cancel and revert to the original theme. Once confirmed, the selection is automatically saved to `settings.json` and will take effect on the next launch.
+As you browse in the picker, the theme is previewed in real-time. Press Esc to cancel and revert to the original theme. Once confirmed, the selection is automatically saved to `settings.json` and takes effect immediately.
 
 #### `debugLogEnabled` — Debug Log
 

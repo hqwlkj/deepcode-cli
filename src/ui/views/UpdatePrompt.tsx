@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Box, Text, useApp, useInput } from "ink";
-import { useTheme } from "../theme";
 
 export type UpdatePromptChoice = "install" | "ignore-once" | "ignore-version";
 
@@ -18,7 +17,6 @@ type Props = {
 
 export function UpdatePrompt({ currentVersion, latestVersion, installCommand, onSelect }: Props): React.ReactElement {
   const { exit } = useApp();
-  const theme = useTheme();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const options: UpdatePromptOption[] = [
     {
@@ -62,14 +60,14 @@ export function UpdatePrompt({ currentVersion, latestVersion, installCommand, on
 
   return (
     <Box flexDirection="column" marginY={1}>
-      <Text bold color={theme.text.primary}>
+      <Text bold>
         Deep Code latest version has been released: {currentVersion} -&gt; {latestVersion}
       </Text>
       <Box flexDirection="column" marginTop={1}>
         {options.map((option, index) => {
           const selected = index === selectedIndex;
           return (
-            <Text key={option.value} color={selected ? theme.brand.accent : undefined}>
+            <Text key={option.value} color={selected ? "#229ac3" : undefined}>
               {selected ? "> " : "  "}
               {index + 1}. {option.label}
             </Text>

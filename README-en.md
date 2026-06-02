@@ -103,13 +103,31 @@ Yes. Deep Code offers a full-featured VSCode extension, available on the [VSCode
 
 Deep Code supports multimodal input — you can paste images from the clipboard with `Ctrl+V`. However, `deepseek-v4` does not support multimodal yet. Some models have multimodal capabilities but impose strict limits on multi-turn dialogue requests. For multimodal input, we recommend using the Volcano Ark `Doubao-Seed-2.0-pro` model, which has the best integration.
 
-### How to automatically send a Slack message after a task completes?
+### How to send a Slack message after a task completes?
 
-Write a shell notification script that calls a Slack webhook, then set the `notify` field in `~/.deepcode/settings.json` to the full path of the script. For detailed steps, see [docs/notify_en.md](docs/notify_en.md).
+Write a shell notification script that calls a Slack webhook, then set the `notify` field in `~/.deepcode/settings.json` to the full path of the script.
+
+> 📖 See [docs/notify_en.md](docs/notify_en.md) for details.
 
 ### How do I enable web search?
 
-Deep Code comes with a built-in, free Web Search tool that works well for most use cases. If you prefer to use a custom script for web search, set the `webSearchTool` field in `~/.deepcode/settings.json` to the full path of your script. For detailed steps, refer to: https://github.com/qorzj/web_search_cli
+Deep Code comes with a built-in, free Web Search tool that works well for most use cases. If you prefer to use a custom script for web search, set the `webSearchTool` field in `~/.deepcode/settings.json` to the full path of your script. For details, refer to: https://github.com/qorzj/web_search_cli
+
+### How do I configure MCP?
+
+Deep Code supports MCP (Model Context Protocol) to connect external services such as GitHub, browsers, databases, and more. Configure the `mcpServers` field in `settings.json` to enable it, then use the `/mcp` command to view MCP server status and available tools.
+
+> 📖 See [docs/mcp.md](docs/mcp.md) for details.
+
+### How to configure notifications after a task completes?
+
+When the AI assistant completes a task, Deep Code can automatically execute a notification script to send the results to your specified channel (e.g., Slack, system notifications, etc.).
+
+> 📖 See [docs/notify_en.md](docs/notify_en.md) for details.
+
+### Does Deep Code only support YOLO mode?
+
+No. Deep Code has a built-in fine-grained permission control mechanism that lets you confirm operations before the AI assistant executes shell commands, reads/writes files, accesses the network, and more. You can configure each permission scope's policy — always allow, always ask, or deny — via the `permissions` field in `settings.json`. See [docs/permission.md](docs/permission.md) for details.
 
 ### Does it support Coding Plan?
 
@@ -126,106 +144,17 @@ Yes. Just set `env.BASE_URL` in `~/.deepcode/settings.json` to an OpenAI-compati
 }
 ```
 
-### How do I configure MCP?
+### How to use and customize themes?
 
-Deep Code supports MCP (Model Context Protocol) to connect external services such as GitHub, browsers, databases, and more. Configure the `mcpServers` field in `settings.json` to enable it, then use the `/mcp` command to view MCP server status and available tools.
+Deep Code CLI includes 8 built-in preset themes, supports the `/theme` command for live preview and switching, and allows full customization via `settings.json`.
 
-For detailed setup instructions, see: [docs/mcp.md](docs/mcp.md)
+**Quick switch:** Run `/theme` to open the picker. Browse with arrow keys, confirm with Enter, cancel with Esc.
 
-### How to configure Deep Code to send notifications after a task completes?
+**Available presets:** `light` (default), `dark`, `github-light`, `github-dark`, `monokai`, `dracula`, `ansi-light`, `ansi-dark`.
 
-When the AI assistant completes a task, Deep Code can automatically execute a notification script to send the task results to the specified channel (e.g., Slack, system notifications, etc.).
+**Custom themes:** Supports simplified color palette (`colors`), partial overrides (`overrides`), and full customization (`tokens`).
 
-For detailed configuration instructions, see: [docs/notify_en.md](docs/notify_en.md)
-
-### Does Deep Code only support YOLO mode?
-
-No. Deep Code has a built-in fine-grained permission control mechanism that lets you confirm operations before the AI assistant executes shell commands, reads/writes files, accesses the network, and more. You can configure each permission scope's policy — always allow, always ask, or deny — via the `permissions` field in `settings.json`. See [docs/permission.md](docs/permission.md) for details.
-
-### How do I customize the theme?
-
-Deep Code CLI includes multiple built-in preset themes, defaulting to the light theme (`light`). You can switch presets by setting `theme.preset` in `settings.json`, or set it to `"custom"` for full customization.
-
-**Using preset themes**
-
-Set `theme.preset` in `settings.json` to switch:
-
-```json
-{
-  "theme": {
-    "preset": "dark"
-  }
-}
-```
-
-Available presets: `light` (default), `dark`, `github-light`, `github-dark`, `monokai`, `dracula`, `ansi`.
-
-You can also use the `/theme` command at runtime to open the theme picker with live preview.
-
-**Option 1: Partial overrides (preset="custom" + overrides)**
-
-Override only the colors you want to change; the rest keep their defaults:
-
-```json
-{
-  "theme": {
-    "preset": "custom",
-    "overrides": {
-      "primary": "#ff6600",
-      "success": "greenBright"
-    }
-  }
-}
-```
-
-**Option 2: Full customization (preset="custom" + tokens)**
-
-Provide a complete tokens object, merged on top of the light theme:
-
-```json
-{
-  "theme": {
-    "preset": "custom",
-    "tokens": {
-      "primary": "#229ac3",
-      "secondary": "#229ac3e6",
-      "success": "green",
-      "error": "red",
-      "warning": "yellow",
-      "info": "magenta",
-      "text": "white",
-      "textDim": "gray",
-      "textBright": "white",
-      "code": "cyan",
-      "border": "gray",
-      "gradients": ["#229ac3e6", "#229ac3e6"]
-    }
-  }
-}
-```
-
-> Note: `overrides` and `tokens` only take effect when `preset` is set to `"custom"`. When `preset` is unset, the `light` theme is used by default.
-
-Default light theme (`light`) color values:
-
-| Token | Default | Used For |
-|-------|---------|----------|
-| `primary` | `#229ac3` | Primary brand: user messages, selected items, status line bullets, Markdown headings |
-| `secondary` | `#229ac3e6` | Secondary brand: welcome screen logo text/border, exit panel border |
-| `success` | `#1a7f37` | Success: tool execution success, MCP ready, diff additions, low-risk permissions |
-| `error` | `#d1242f` | Error: tool execution failure, error lines, diff deletions, high-risk permissions |
-| `warning` | `#fa8c16` | Warning/in-progress: busy spinner, permission prompt border, list bullets, MCP starting |
-| `info` | `#0969da` | Info: skill loading tips, image attachment status |
-| `text` | `#3D4149` | Body text: permission prompt text, question text, ProcessStdout title |
-| `textDim` | `#646A71` | Secondary text: status line params, search placeholder, diff context, Markdown blockquotes |
-| `textBright` | `#1F2329` | Bright text: emphasized hints |
-| `code` | `#787f8a` | Code blocks and inline code |
-| `border` | `#999` | All component borders |
-| `gradients` | `["#229ac3", "#8250df"]` | Logo and exit panel gradient colors |
-
-Color values support hex (`"#ff6600"`), hex with alpha (`"#229ac3e6"`), and chalk named colors (`"cyanBright"`, `"green"`).
-
-> Note: `tokens` takes priority over `overrides` — if both are specified, only `tokens` is used. Theme settings can be placed in the global `~/.deepcode/settings.json` or the project-root `.deepcode/settings.json`.
+> 📖 See [docs/configuration.md](docs/configuration.md) for the full configuration guide.
 
 ## Contributing
 
