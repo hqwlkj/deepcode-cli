@@ -584,7 +584,6 @@ function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.ReactEl
 
     if (mode === RawMode.Raw) {
       // In raw mode, re-render all messages directly to stdout at the new width.
-      // Use process.stdout.write instead of writeRef to avoid Ink interference.
       process.stdout.write(ANSI_CLEAR_SCREEN);
       const activeSessionId = sessionManager.getActiveSessionId();
       const allMessages = activeSessionId ? loadVisibleMessages(sessionManager, activeSessionId) : [];
@@ -592,21 +591,12 @@ function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.ReactEl
       return;
     }
 
-    // Force full redraw on terminal resize to avoid stale wrapped rows.
-    writeRef.current("\u001B[2J\u001B[H");
-
-    setMessages([]);
-    setShowWelcome(false);
+    // Don't clear the screen on resize — Ink handles re-layout naturally.
+    // Clearing causes scroll-to-top and flash, especially on tab switch in iTerm2.
+    // Just force ThemeableStatic to remount so Ink recalculates row heights.
     setWelcomeNonce((n) => n + 1);
-
-    const activeSessionId = sessionManager.getActiveSessionId();
-    const nextMessages =
-      activeSessionId && !busy ? loadVisibleMessages(sessionManager, activeSessionId) : messagesRef.current;
-    setTimeout(() => {
-      setMessages(nextMessages);
-      setShowWelcome(true);
-    }, 0);
-  }, [busy, mode, sessionManager, columns, stdout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, mode, sessionManager, columns]);
 
   const screenWidth = useMemo(() => columns ?? stdout?.columns ?? 80, [columns, stdout]);
   const screenHeight = useMemo(() => rows ?? stdout?.rows ?? 24, [rows, stdout]);
