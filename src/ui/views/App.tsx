@@ -630,7 +630,8 @@ function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.ReactEl
 
     // Don't clear the screen on resize — Ink handles re-layout naturally.
     // Clearing causes scroll-to-top and flash, especially on tab switch in iTerm2.
-    // Just force ThemeableStatic to remount so Ink recalculates row heights.
+    // Use welcomeNonce to force PromptInput and other components to re-render,
+    // but don't pass it to ThemeableStatic (see layoutResetKey below).
     setWelcomeNonce((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, mode, sessionManager, columns]);
@@ -736,7 +737,7 @@ function App({ projectRoot, initialPrompt, onRestart }: AppProps): React.ReactEl
 
   return (
     <Box flexDirection="column" width={screenWidth} minWidth={80} overflowX={"visible"}>
-      <ThemeableStatic items={staticItems} themeVersion={themeVersion} resetKey={welcomeNonce}>
+      <ThemeableStatic items={staticItems} themeVersion={themeVersion}>
         {(item) => {
           if (item.id.startsWith("__welcome__")) {
             return (

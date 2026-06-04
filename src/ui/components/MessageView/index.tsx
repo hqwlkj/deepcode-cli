@@ -82,6 +82,13 @@ export function MessageView({ message, collapsed, width = 80 }: MessageViewProps
                     </Box>
                   );
                 }
+                if (seg.kind === "code") {
+                  return (
+                    <Box key={i} backgroundColor={theme.codeBlock.background} paddingLeft={1}>
+                      <Text>{seg.body}</Text>
+                    </Box>
+                  );
+                }
                 return <Text key={i}>{seg.body}</Text>;
               })
             : null}

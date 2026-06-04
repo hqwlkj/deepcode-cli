@@ -21,23 +21,14 @@ type Props<T> = {
 const ThemeableStaticInner = function ThemeableStaticInner<T>({
   items,
   themeVersion: _themeVersion,
-  resetKey,
   children: render,
 }: Props<T>): React.ReactElement {
-  // resetKey 用于 /new 等需要重新挂载的场景
-  // themeVersion 不参与 key，切换主题时历史消息保持原样，新消息用新主题
-  const key = `${resetKey ?? 0}`;
-
   const wrappedRender = useMemo(() => (item: T, index: number) => render(item, index), [render]);
-  return (
-    <Static key={key} items={items}>
-      {wrappedRender}
-    </Static>
-  );
+  return <Static items={items}>{wrappedRender}</Static>;
 };
 
 function propsAreEqual(prev: Props<unknown>, next: Props<unknown>): boolean {
-  return prev.items === next.items && prev.themeVersion === next.themeVersion && prev.resetKey === next.resetKey;
+  return prev.items === next.items && prev.themeVersion === next.themeVersion;
 }
 
 export default React.memo(ThemeableStaticInner, propsAreEqual) as typeof ThemeableStaticInner;

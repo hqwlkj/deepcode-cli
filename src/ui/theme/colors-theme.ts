@@ -152,10 +152,10 @@ export function buildThemeTokens(
       border: dimHex(fg, 0.7),
     },
     codeBlock: {
-      foreground: fg,
-      background: mode === "dark" ? dimHex(c.Background, 0.15) : dimHex(c.Background, 0.05),
+      foreground: inv,
+      background: dimHex(fg, 0.7),
       border: dimHex(fg, 0.7),
-      title: fg,
+      title: inv,
       lineNumber: c.Gray,
       highlight: mode === "dark" ? "#2d333b" : "#fff8c5",
     },
@@ -187,7 +187,7 @@ export function buildThemeTokens(
       unchecked: dimHex(fg, 0.7),
     },
     table: {
-      border: dimHex(fg, 0.7),
+      border: dimHex(c.AccentYellowDim, 0.7),
       headerForeground: fg,
       headerBackground: dimHex(c.Background, 0.08),
       cellForeground: fg,
