@@ -45,6 +45,8 @@ export type PermissionSettings = {
   defaultMode?: PermissionDefaultMode;
 };
 
+export type EnabledSkillsSettings = Record<string, boolean>;
+
 export type DeepcodingSettings = {
   env?: DeepcodingEnv;
   model?: string;
@@ -57,6 +59,7 @@ export type DeepcodingSettings = {
   webSearchTool?: string;
   mcpServers?: Record<string, McpServerConfig>;
   permissions?: PermissionSettings;
+  enabledSkills?: EnabledSkillsSettings;
   theme?: ThemeSettings;
 };
 
@@ -74,6 +77,7 @@ export type ResolvedDeepcodingSettings = {
   webSearchTool?: string;
   mcpServers?: Record<string, McpServerConfig>;
   permissions: Required<PermissionSettings>;
+  enabledSkills: EnabledSkillsSettings;
   theme: ThemeTokens;
 };
 
@@ -189,6 +193,30 @@ function mergePermissions(
       : userSettings?.permissions
         ? userPermissions.defaultMode
         : "allowAll",
+  };
+}
+
+function normalizeEnabledSkills(value: unknown): EnabledSkillsSettings {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const result: EnabledSkillsSettings = {};
+  for (const [name, enabled] of Object.entries(value)) {
+    if (!name || typeof enabled !== "boolean") {
+      continue;
+    }
+    result[name] = enabled;
+  }
+  return result;
+}
+
+function mergeEnabledSkills(
+  userSettings: DeepcodingSettings | null | undefined,
+  projectSettings: DeepcodingSettings | null | undefined
+): EnabledSkillsSettings {
+  return {
+    ...normalizeEnabledSkills(userSettings?.enabledSkills),
+    ...normalizeEnabledSkills(projectSettings?.enabledSkills),
   };
 }
 
@@ -368,6 +396,7 @@ export function resolveSettingsSources(
     webSearchTool: webSearchTool || undefined,
     mcpServers: mergeMcpServers(userSettings, projectSettings, userEnv, projectEnv, systemEnv),
     permissions: mergePermissions(userSettings, projectSettings),
+    enabledSkills: mergeEnabledSkills(userSettings, projectSettings),
     theme: resolveTheme(userSettings?.theme ?? projectSettings?.theme),
   };
 }

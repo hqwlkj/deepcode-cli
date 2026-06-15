@@ -6,13 +6,14 @@ import * as os from "os";
 import * as path from "path";
 import { GitFileHistory } from "../common/file-history";
 import { clearSessionState } from "../common/state";
-import { getProjectCode, SessionManager, type SessionMessage } from "../session";
+import { getProjectCode, SessionManager, type SessionMessage, type SkillInfo } from "../session";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleWarn = console.warn;
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
 const tempDirs: string[] = [];
+const PLAN_MODE_STATUS_MESSAGE = "/plan\n  └ Set Plan Mode on. Awaiting <proposed_plan>.";
 
 /** Set homedir in a cross-platform way (HOME on Unix, USERPROFILE on Windows). */
 function setHomeDir(dir: string): void {
@@ -469,6 +470,250 @@ test("SessionManager lists skills from Deep Code and .agents roots by priority",
   assert.equal(nativeUserSkill?.description, "User .deepcode skill");
   assert.equal(sharedSkill?.path, "./.deepcode/skills/shared/SKILL.md");
   assert.equal(sharedSkill?.description, "Project .deepcode skill");
+});
+
+test("SessionManager lists bundled skills at lowest priority", async () => {
+  const workspace = createTempDir("deepcode-bundled-skills-workspace-");
+  const home = createTempDir("deepcode-bundled-skills-home-");
+  setHomeDir(home);
+
+  const manager = createSessionManager(workspace, "machine-id-bundled-skills");
+  const skills = await manager.listSkills();
+  const skillWriter = skills.find((skill) => skill.name === "skill-writer");
+  const selfRefer = skills.find((skill) => skill.name === "deepcode-self-refer");
+
+  assert.equal(skillWriter?.path, "bundled:skill-writer/SKILL.md");
+  assert.equal(selfRefer?.path, "bundled:deepcode-self-refer/SKILL.md");
+  assert.match(skillWriter?.description ?? "", /Guide users through creating/);
+});
+
+test("SessionManager lets project skills override bundled skills", async () => {
+  const workspace = createTempDir("deepcode-bundled-override-workspace-");
+  const home = createTempDir("deepcode-bundled-override-home-");
+  setHomeDir(home);
+
+  const projectSkillDir = path.join(workspace, ".deepcode", "skills", "skill-writer");
+  fs.mkdirSync(projectSkillDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(projectSkillDir, "SKILL.md"),
+    "---\nname: skill-writer\ndescription: Project override skill writer\n---\n# Project Skill Writer\n",
+    "utf8"
+  );
+
+  const manager = createSessionManager(workspace, "machine-id-bundled-override");
+  const skillWriter = (await manager.listSkills()).find((skill) => skill.name === "skill-writer");
+
+  assert.equal(skillWriter?.path, "./.deepcode/skills/skill-writer/SKILL.md");
+  assert.equal(skillWriter?.description, "Project override skill writer");
+});
+
+test("SessionManager resolves bundled skill prompts", () => {
+  const workspace = createTempDir("deepcode-bundled-prompt-workspace-");
+  const home = createTempDir("deepcode-bundled-prompt-home-");
+  setHomeDir(home);
+
+  const manager = createSessionManager(workspace, "machine-id-bundled-prompt");
+  const prompt = (manager as any).buildSkillPrompt({
+    name: "skill-writer",
+    path: "bundled:skill-writer/SKILL.md",
+    description: "Write skills",
+  });
+
+  assert.match(prompt, /<skill-writer-skill/);
+  assert.match(prompt, /# Skill Writer/);
+});
+
+test("SessionManager appends plan mode status whenever the plan skill is selected", async () => {
+  const workspace = createTempDir("deepcode-plan-skill-workspace-");
+  const home = createTempDir("deepcode-plan-skill-home-");
+  setHomeDir(home);
+
+  const manager = createSessionManager(workspace, "machine-id-plan-skill");
+  const planSkill = await getPlanSkill(manager);
+
+  const sessionId = await manager.createSession({ text: "", skills: [planSkill] });
+  let messages = manager.listSessionMessages(sessionId);
+  assert.equal(countPlanModeStatusMessages(messages), 1);
+  assert.equal(countLoadedSkillMessages(messages, "plan"), 1);
+
+  await manager.replySession(sessionId, { text: "", skills: [planSkill] });
+  messages = manager.listSessionMessages(sessionId);
+  assert.equal(countPlanModeStatusMessages(messages), 2);
+  assert.equal(countLoadedSkillMessages(messages, "plan"), 1);
+});
+
+test("SessionManager appends plan mode status when the plan skill is auto-matched", async () => {
+  const workspace = createTempDir("deepcode-plan-matched-workspace-");
+  const home = createTempDir("deepcode-plan-matched-home-");
+  setHomeDir(home);
+
+  const client = {
+    chat: {
+      completions: {
+        create: async (request: any) => {
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse(["plan"]);
+          }
+          return createChatResponse("planned", { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 });
+        },
+      },
+    },
+  };
+  const manager = createMockedClientSessionManagerWithClient(workspace, client);
+
+  const sessionId = await manager.createSession({ text: "Plan Mode for this change" });
+  const messages = manager.listSessionMessages(sessionId);
+  assert.equal(countPlanModeStatusMessages(messages), 1);
+  assert.equal(countLoadedSkillMessages(messages, "plan"), 1);
+});
+
+test("SessionManager appends plan mode status for deferred permission prompts", async () => {
+  const workspace = createTempDir("deepcode-plan-deferred-workspace-");
+  const home = createTempDir("deepcode-plan-deferred-home-");
+  setHomeDir(home);
+
+  const manager = createSessionManager(workspace, "machine-id-plan-deferred");
+  const sessionId = await manager.createSession({ text: "" });
+  const planSkill = await getPlanSkill(manager);
+
+  await (manager as any).appendDeferredPermissionPrompt(
+    sessionId,
+    { text: "", skills: [planSkill] },
+    new AbortController()
+  );
+
+  const messages = manager.listSessionMessages(sessionId);
+  assert.equal(countPlanModeStatusMessages(messages), 1);
+  assert.equal(countLoadedSkillMessages(messages, "plan"), 1);
+});
+
+test("SessionManager excludes disabled skills by resolved skill name", async () => {
+  const workspace = createTempDir("deepcode-disabled-skills-workspace-");
+  const home = createTempDir("deepcode-disabled-skills-home-");
+  setHomeDir(home);
+
+  const writeSkill = (root: string, dirName: string, skillName: string): void => {
+    const skillDir = path.join(root, dirName);
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, "SKILL.md"),
+      `---\nname: ${skillName}\ndescription: ${skillName} description\n---\n# ${skillName}\n`,
+      "utf8"
+    );
+  };
+
+  for (const root of [
+    path.join(workspace, ".deepcode", "skills"),
+    path.join(workspace, ".agents", "skills"),
+    path.join(home, ".deepcode", "skills"),
+    path.join(home, ".agents", "skills"),
+  ]) {
+    writeSkill(root, "skill-writer", "skill-writer");
+  }
+  writeSkill(path.join(workspace, ".deepcode", "skills"), "frontmatter-disabled", "renamed-disabled");
+  writeSkill(path.join(workspace, ".deepcode", "skills"), "enabled-skill", "enabled-skill");
+
+  const manager = new SessionManager({
+    projectRoot: workspace,
+    createOpenAIClient: () => ({
+      client: null,
+      model: "test-model",
+      baseURL: "https://api.deepseek.com",
+      thinkingEnabled: false,
+      machineId: "machine-id-disabled-skills",
+    }),
+    getResolvedSettings: () => ({
+      model: "test-model",
+      enabledSkills: {
+        "skill-writer": false,
+        "renamed-disabled": false,
+        "deepcode-self-refer": false,
+        "skill-digester": false,
+        plan: false,
+        "enabled-skill": true,
+      },
+    }),
+    renderMarkdown: (text) => text,
+    onAssistantMessage: () => {},
+  });
+
+  const skills = await manager.listSkills();
+  const skillNames = skills.map((skill) => skill.name);
+
+  assert.deepEqual(skillNames, ["enabled-skill"]);
+  assert.equal(skills[0]?.path, "./.deepcode/skills/enabled-skill/SKILL.md");
+});
+
+test("SessionManager keeps implicit opt-out skills available for manual invocation", async () => {
+  const workspace = createTempDir("deepcode-manual-only-skill-workspace-");
+  const home = createTempDir("deepcode-manual-only-skill-home-");
+  setHomeDir(home);
+
+  const skillDir = path.join(workspace, ".agents", "skills", "manual-only");
+  fs.mkdirSync(skillDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(skillDir, "SKILL.md"),
+    "---\nname: manual-only\ndescription: Manual-only skill\nmetadata:\n  allow-implicit-invocation: false\n---\n# Manual Only\n",
+    "utf8"
+  );
+
+  const manager = createSessionManager(workspace, "machine-id-manual-only-skill");
+  const skill = (await manager.listSkills()).find((candidate) => candidate.name === "manual-only");
+  assert.ok(skill);
+  assert.equal(skill.allowImplicitInvocation, false);
+
+  const sessionId = await manager.createSession({ text: "", skills: [skill] });
+  const skillMessages = manager
+    .listSessionMessages(sessionId)
+    .filter((message) => message.role === "system" && message.meta?.skill?.name === "manual-only");
+
+  assert.equal(skillMessages.length, 1);
+  assert.match(skillMessages[0]?.content ?? "", /<manual-only-skill/);
+  assert.doesNotMatch(skillMessages[0]?.content ?? "", /allow-implicit-invocation/);
+});
+
+test("SessionManager excludes implicit opt-out skills from automatic matching candidates", async () => {
+  const workspace = createTempDir("deepcode-implicit-opt-out-workspace-");
+  const home = createTempDir("deepcode-implicit-opt-out-home-");
+  setHomeDir(home);
+  globalThis.fetch = (async () => ({ ok: true, text: async () => "" }) as Response) as typeof fetch;
+
+  const writeSkill = (name: string, metadata = ""): void => {
+    const skillDir = path.join(workspace, ".deepcode", "skills", name);
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, "SKILL.md"),
+      `---\nname: ${name}\ndescription: ${name} description${metadata}\n---\n# ${name}\n`,
+      "utf8"
+    );
+  };
+  writeSkill("auto-skill");
+  writeSkill("manual-only", "\nmetadata:\n  allow-implicit-invocation: false");
+
+  const requests: any[] = [];
+  const client = {
+    chat: {
+      completions: {
+        create: async (request: any) => {
+          requests.push(request);
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse(["manual-only", "auto-skill"]);
+          }
+          return createChatResponse("done", { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 });
+        },
+      },
+    },
+  };
+  const manager = createMockedClientSessionManagerWithClient(workspace, client);
+  (manager as any).activateSession = async () => {};
+
+  const sessionId = await manager.createSession({ text: "choose an automatic skill" });
+  const matchingPrompt = String(requests[0]?.messages?.[0]?.content ?? "");
+
+  assert.match(matchingPrompt, /"name": "auto-skill"/);
+  assert.doesNotMatch(matchingPrompt, /"name": "manual-only"/);
+  assert.equal(countLoadedSkillMessages(manager.listSessionMessages(sessionId), "auto-skill"), 1);
+  assert.equal(countLoadedSkillMessages(manager.listSessionMessages(sessionId), "manual-only"), 0);
 });
 
 test("SessionManager dispose disconnects MCP servers", async () => {
@@ -2760,7 +3005,10 @@ test("SessionManager stores usage per model across model changes", async () => {
   const client = {
     chat: {
       completions: {
-        create: async () => {
+        create: async (request: any) => {
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse();
+          }
           const response = responses.shift();
           assert.ok(response, "expected a queued chat response");
           return response;
@@ -3290,6 +3538,20 @@ function createSessionManager(projectRoot: string, machineId: string): SessionMa
   });
 }
 
+async function getPlanSkill(manager: SessionManager): Promise<SkillInfo> {
+  const planSkill = (await manager.listSkills()).find((skill) => skill.name === "plan");
+  assert.ok(planSkill);
+  return planSkill;
+}
+
+function countPlanModeStatusMessages(messages: SessionMessage[]): number {
+  return messages.filter((message) => message.role === "system" && message.content === PLAN_MODE_STATUS_MESSAGE).length;
+}
+
+function countLoadedSkillMessages(messages: SessionMessage[], skillName: string): number {
+  return messages.filter((message) => message.role === "system" && message.meta?.skill?.name === skillName).length;
+}
+
 function createNotifyingSessionManager(
   projectRoot: string,
   responses: unknown[],
@@ -3299,7 +3561,10 @@ function createNotifyingSessionManager(
   const client = {
     chat: {
       completions: {
-        create: async () => {
+        create: async (request: any) => {
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse();
+          }
           const response = responses.shift();
           assert.ok(response, "expected a queued chat response");
           if (response instanceof Error) {
@@ -3337,7 +3602,10 @@ function createMockedClientSessionManager(projectRoot: string, responses: unknow
   const client = {
     chat: {
       completions: {
-        create: async () => {
+        create: async (request: any) => {
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse();
+          }
           const response = responses.shift();
           assert.ok(response, "expected a queued chat response");
           return response;
@@ -3373,7 +3641,10 @@ function createPermissionSessionManager(
   const client = {
     chat: {
       completions: {
-        create: async () => {
+        create: async (request: any) => {
+          if (isSkillMatchingRequest(request)) {
+            return createSkillMatchingResponse();
+          }
           const response = responses.shift();
           assert.ok(response, "expected a queued chat response");
           return response;
@@ -3412,6 +3683,14 @@ function createMockedClientSessionManagerWithClient(projectRoot: string, client:
 }
 
 class APIUserAbortError extends Error {}
+
+function isSkillMatchingRequest(request: any): boolean {
+  return request?.response_format?.type === "json_object";
+}
+
+function createSkillMatchingResponse(skillNames: string[] = []): unknown {
+  return { choices: [{ message: { content: JSON.stringify({ skillNames }) } }] };
+}
 
 function createChatResponse(content: string, usage: Record<string, unknown>): unknown {
   return {

@@ -13,6 +13,8 @@ import type { DiffPreviewLine, MessageViewProps } from "./types";
 import { RawMode, useRawModeContext } from "../../contexts";
 import { useTheme } from "../../theme";
 
+const PROMPT_ECHO_PREFIX_WIDTH = 2;
+
 export function MessageView({ message, collapsed, width = 80 }: MessageViewProps): React.ReactElement | null {
   const { mode } = useRawModeContext();
   const theme = useTheme();
@@ -23,17 +25,11 @@ export function MessageView({ message, collapsed, width = 80 }: MessageViewProps
   if (message.role === "user") {
     const text = message.content || "(no content)";
     return (
-      <Box marginLeft={1} marginBottom={1} flexDirection="row" marginY={0} flexGrow={1} gap={1}>
-        <Box>
-          <Text color={theme.brand.accent}>{`>`}</Text>
-        </Box>
-        <Box flexGrow={1}>
-          <Text color={theme.brand.accent}>{text}</Text>
-          {Array.isArray(message.contentParams) && message.contentParams.length > 0 ? (
-            <Text color={theme.status.info}>{`  📎 ${message.contentParams.length} image attachment(s)`}</Text>
-          ) : null}
-        </Box>
-      </Box>
+      <PromptEchoLine
+        text={text}
+        width={width}
+        attachmentCount={Array.isArray(message.contentParams) ? message.contentParams.length : 0}
+      />
     );
   }
 
@@ -118,16 +114,7 @@ export function MessageView({ message, collapsed, width = 80 }: MessageViewProps
   if (message.role === "system") {
     // Render model change messages in the same style as user commands.
     if (message.meta?.settingChange) {
-      return (
-        <Box marginY={0} marginLeft={1} marginBottom={1} flexGrow={1} flexDirection="row" gap={1}>
-          <Box>
-            <Text color={theme.brand.accent}>{`>`}</Text>
-          </Box>
-          <Box flexGrow={1} flexDirection="column">
-            <Text color={theme.brand.accent}>{message.content}</Text>
-          </Box>
-        </Box>
-      );
+      return <PromptEchoLine text={message.content || ""} width={width} />;
     }
 
     if (message.meta?.skill) {
@@ -150,6 +137,35 @@ export function MessageView({ message, collapsed, width = 80 }: MessageViewProps
   }
 
   return null;
+}
+
+export function getPromptEchoContentWidth(width: number): number {
+  return Math.max(1, width - PROMPT_ECHO_PREFIX_WIDTH);
+}
+
+function PromptEchoLine({
+  text,
+  width,
+  attachmentCount = 0,
+}: {
+  text: string;
+  width: number;
+  attachmentCount?: number;
+}): React.ReactElement {
+  const contentWidth = getPromptEchoContentWidth(width);
+  return (
+    <Box marginBottom={1} marginY={0} width={Math.max(1, width)} flexDirection="row">
+      <Box width={PROMPT_ECHO_PREFIX_WIDTH}>
+        <Text color="#229ac3">{"> "}</Text>
+      </Box>
+      <Box flexGrow={1} flexShrink={1} width={contentWidth}>
+        <Text color="#229ac3" wrap="hard">
+          {text}
+        </Text>
+        {attachmentCount > 0 ? <Text color="#229ac3">{`  📎 ${attachmentCount} image attachment(s)`}</Text> : null}
+      </Box>
+    </Box>
+  );
 }
 
 function StatusLine({
