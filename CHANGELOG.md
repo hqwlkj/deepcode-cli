@@ -8,12 +8,6 @@ and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Only stable releases
 are listed; pre-releases are intentionally omitted.
 
-#### Release Schedule
-
-- Weekly release: patch version at the end of every week for routine bugfixes (anytime for an urgent bugfix).
-- Monthly release: minor version at the end of every month for new features.
-- Major version release is not included in this schedule for breaking changes and new features.
-
 > **This file is generated automatically** from
 > [GitHub Releases](https://github.com/lessweb/deepcode-cli/releases). Do not
 > edit it by hand — run `npm run changelog` to regenerate.
