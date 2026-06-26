@@ -8,29 +8,43 @@ and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Only stable releases
 are listed; pre-releases are intentionally omitted.
 
+#### Release Schedule
+
+- Weekly release: patch version at the end of every week for routine bugfixes (anytime for an urgent bugfix).
+- Monthly release: minor version at the end of every month for new features.
+- Major version release is not included in this schedule for breaking changes and new features.
+
 > **This file is generated automatically** from
 > [GitHub Releases](https://github.com/lessweb/deepcode-cli/releases). Do not
 > edit it by hand — run `npm run changelog` to regenerate.
 
-## [0.1.31](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.31) - 2026-06-16
+## [0.1.31](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.31)
+
+`2026-06-16`
 
 ### Other
 
 - chore(deps-dev): bump esbuild and tsx ([#174](https://github.com/lessweb/deepcode-cli/pull/174))
 
-## [0.1.30](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.30) - 2026-06-15
+## [0.1.30](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.30)
+
+`2026-06-15`
 
 ### Fixed
 
 - mcp: fix Windows MCP spawn double-quoting that breaks all MCP servers ([#164](https://github.com/lessweb/deepcode-cli/pull/164))
 
-## [0.1.29](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.29) - 2026-06-09
+## [0.1.29](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.29)
+
+`2026-06-09`
 
 ### Other
 
 - 修复提示输入的换行、光标定位与 busy 状态显示 ([#171](https://github.com/lessweb/deepcode-cli/pull/171))
 
-## [0.1.28](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.28) - 2026-06-05
+## [0.1.28](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.28)
+
+`2026-06-05`
 
 ### Added
 
@@ -41,14 +55,18 @@ are listed; pre-releases are intentionally omitted.
 
 - extract OpenAI message converter from SessionManager ([#140](https://github.com/lessweb/deepcode-cli/pull/140))
 
-## [0.1.27](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.27) - 2026-06-01
+## [0.1.27](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.27)
+
+`2026-06-01`
 
 ### Other
 
 - chore(deps): update ink-gradient to 4.0.1 ([#135](https://github.com/lessweb/deepcode-cli/pull/135))
 - chore: 更新API Key not found时的文本显示 ([#137](https://github.com/lessweb/deepcode-cli/pull/137))
 
-## [0.1.26](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.26) - 2026-05-29
+## [0.1.26](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.26)
+
+`2026-05-29`
 
 ### Changed
 
@@ -64,7 +82,9 @@ are listed; pre-releases are intentionally omitted.
 
 - chore(deps): 更新 ink 依赖到 7.0.4 版本 ([#125](https://github.com/lessweb/deepcode-cli/pull/125))
 
-## [0.1.25](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.25) - 2026-05-25
+## [0.1.25](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.25)
+
+`2026-05-25`
 
 ### Added
 
@@ -85,7 +105,9 @@ are listed; pre-releases are intentionally omitted.
 
 - 更新扩展命令菜单说明和帮助文档 ([#109](https://github.com/lessweb/deepcode-cli/pull/109))
 
-## [0.1.24](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.24) - 2026-05-21
+## [0.1.24](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.24)
+
+`2026-05-21`
 
 ### Added
 
@@ -101,21 +123,27 @@ are listed; pre-releases are intentionally omitted.
 - ui: 修正组件路径拼写错误 ([#93](https://github.com/lessweb/deepcode-cli/pull/93))
 - resolve CJK composition bug on iOS terminals (backspace packet splitting) ([#94](https://github.com/lessweb/deepcode-cli/pull/94))
 
-## [0.1.23](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.23) - 2026-05-19
+## [0.1.23](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.23)
+
+`2026-05-19`
 
 ### Added
 
 - 新增 `/raw` 命令交互与终端消息直出 ([#89](https://github.com/lessweb/deepcode-cli/pull/89))
 - notify: pass STATUS, FAIL_REASON, BODY, TITLE as env vars to notify hook ([#90](https://github.com/lessweb/deepcode-cli/pull/90))
 
-## [0.1.22](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.22) - 2026-05-18
+## [0.1.22](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.22)
+
+`2026-05-18`
 
 ### Added
 
 - add -p/--prompt flag to auto-submit prompt on launch ([#86](https://github.com/lessweb/deepcode-cli/pull/86))
 - Add Ctrl+O live process stdout viewer ([#75](https://github.com/lessweb/deepcode-cli/pull/75))
 
-## [0.1.21](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.21) - 2026-05-16
+## [0.1.21](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.21)
+
+`2026-05-16`
 
 ### Added
 
@@ -137,7 +165,9 @@ are listed; pre-releases are intentionally omitted.
 
 - style(DropdownMenu): 调整内边距优化下拉菜单布局 ([#73](https://github.com/lessweb/deepcode-cli/pull/73))
 
-## [0.1.20](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.20) - 2026-05-14
+## [0.1.20](https://github.com/lessweb/deepcode-cli/releases/tag/v0.1.20)
+
+`2026-05-14`
 
 ### Added
 

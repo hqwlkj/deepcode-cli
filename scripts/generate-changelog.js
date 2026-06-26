@@ -52,7 +52,8 @@ const STABLE_TAG_RE = /^v?(\d+)\.(\d+)\.(\d+)$/;
 
 /**
  * Matches a GitHub "What's Changed" bullet, e.g.
- *   * fix(core): do a thing by @octocat in https://github.com/o/r/pull/42
+ *
+ * fix(core): do a thing by @octocat in https://github.com/o/r/pull/42
  */
 const ENTRY_RE = /^[*-]\s+(.+)\s+by\s+@([A-Za-z0-9-]+(?:\[bot\])?)\s+in\s+(https?:\/\/\S+\/pull\/(\d+))\s*$/;
 
@@ -114,10 +115,8 @@ export function formatEntry(entry, cat = categorize(entry.title)) {
 /** Render one release as a Markdown block. */
 export function formatRelease(release) {
   const lines = [];
-  const heading = release.htmlUrl
-    ? `## [${release.version}](${release.htmlUrl}) - ${release.date}`
-    : `## [${release.version}] - ${release.date}`;
-  lines.push(heading, "");
+  const heading = release.htmlUrl ? `## [${release.version}](${release.htmlUrl})` : `## [${release.version}]`;
+  lines.push(heading, "", "`" + release.date + "`", "");
 
   const buckets = new Map();
   for (const entry of release.entries) {
