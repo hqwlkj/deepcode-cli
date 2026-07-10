@@ -14,7 +14,7 @@ export default function ThinkingBubble({ content, shouldConnect = false }: Think
   const [open, setOpen] = useState(true);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="relative flex gap-2 rounded-md mb-3">
+    <Collapsible open={open} onOpenChange={setOpen} className="relative flex w-full gap-2 rounded-md mb-3">
       <BubbleDot connectToPrev={shouldConnect} className="mt-4" />
       <div className="absolute left-0.75 h-full w-px bg-muted-foreground top-6"></div>
       <div className="flex-1 min-w-0 data-[state=open]:bg-muted">

@@ -54,7 +54,7 @@ export default function UserBubble({ content, meta, onEdit }: UserBubbleProps) {
         </div>
       )}
       <div className="max-w-[85%] bg-primary/25 rounded-lg px-3 py-2">
-        <Markdown>{content}</Markdown>
+        <Markdown className="user-bubble">{content}</Markdown>
       </div>
       <div className="invisible group-hover:visible text-sm mt-1">
         <Tooltip>

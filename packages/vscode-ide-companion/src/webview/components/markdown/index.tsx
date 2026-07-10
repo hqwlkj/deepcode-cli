@@ -6,9 +6,13 @@ import type { Options as MarkdownItOptions } from "markdown-it";
 import hljs from "highlight.js";
 // @ts-expect-error -- module does not provide types
 import taskLists from "markdown-it-task-lists";
+import { cn } from "@/webview/lib/utils";
 import "./index.css";
+import "highlight.js/styles/github-dark.css";
+import "highlight.js/styles/github.css";
 
 export interface MarkdownProps {
+  className?: string;
   children?: string;
   onFileClick?: (filePath: string) => void;
   /** When false, do not convert file paths into clickable links. Default: true */
@@ -90,7 +94,7 @@ const createMarkdownInstance = (): MarkdownIt => {
     breaks: true,
     linkify: true,
     typographer: true,
-    highlight: function (str, lang) {
+    highlight: function (str, lang, attrs) {
       if (lang && hljs.getLanguage(lang)) {
         try {
           return (
@@ -109,7 +113,7 @@ const createMarkdownInstance = (): MarkdownIt => {
   return md;
 };
 
-const Markdown: FC<MarkdownProps> = ({ children = "", onFileClick, enableFileLinks }) => {
+const Markdown: FC<MarkdownProps> = ({ className, children = "", onFileClick, enableFileLinks }) => {
   // Cache MarkdownIt instance
   const md = useMemo(() => createMarkdownInstance(), []);
 
@@ -386,7 +390,7 @@ const Markdown: FC<MarkdownProps> = ({ children = "", onFileClick, enableFileLin
 
   return (
     <div
-      className="markdown-content"
+      className={cn("markdown-content", className)}
       onClick={handleContainerClick}
       dangerouslySetInnerHTML={{ __html: renderedHtml }}
       style={{
