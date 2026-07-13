@@ -23,7 +23,7 @@ vi.mock("@/webview/components/ui/input-group", () => ({
 }));
 
 vi.mock("@/webview/components/ui/drawer", () => ({
-  Drawer: vi.fn(({ children, open, onOpenChange }) => (
+  Drawer: vi.fn(({ children, open }) => (
     <div data-testid="drawer" data-open={open}>
       {children}
     </div>
