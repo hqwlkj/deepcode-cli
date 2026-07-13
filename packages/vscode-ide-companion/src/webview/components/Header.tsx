@@ -1,21 +1,11 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Button } from "@/webview/components/ui/button";
-import SessionDropdown from "@/webview/components/SessionList";
 import type { SessionSummary } from "@/webview/types";
-import { PanelRight, Plus, Settings } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { chatService } from "@/webview/services/chatService";
 import icon from "../../../assets/deepcoding_icon.png";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/webview/components/ui/drawer";
 import SessionList from "@/webview/components/SessionList";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
 
 interface HeaderProps {
   sessions: SessionSummary[];
@@ -49,24 +39,38 @@ export default function Header({ sessions, activeSessionId, onSelectSession, onC
       </Button>
 
       <div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 cursor-pointer"
-          onClick={onCreateNewSession}
-          title="New chat"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 cursor-pointer"
-          onClick={() => chatService.openSettings()}
-          title="Open settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 cursor-pointer"
+              onClick={onCreateNewSession}
+              title="New chat"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>New Chat</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 cursor-pointer"
+              onClick={() => chatService.openSettings()}
+              title="Open settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Settings</p>
+          </TooltipContent>
+        </Tooltip>
         <SessionList
           sessions={sessions}
           activeSessionId={activeSessionId}

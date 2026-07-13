@@ -37,7 +37,7 @@
   --muted-foreground: var(--vscode-disabledForeground, #888888);
   --accent: var(--vscode-toolbar-hoverBackground, #e0e0e0);
   --accent-foreground: var(--vscode-foreground, #333333);
-  --destructive: var(--vscode-errorForeground, #d32f2f);
+  --destructive: var(--vscode-editorError-foreground, #d32f2f);
   --success: var(--vscode-testing-iconPassed, #22863a);
   --success-foreground: var(--vscode-editor-background, #ffffff);
   --border: var(--vscode-panel-border, #e0e0e0);
@@ -125,7 +125,7 @@
   --muted-foreground: var(--vscode-disabledForeground, #858585);
   --accent: var(--vscode-toolbar-hoverBackground, #3c3c3c);
   --accent-foreground: var(--vscode-foreground, #cccccc);
-  --destructive: var(--vscode-errorForeground, #f48771);
+  --destructive: var(--vscode-editorError-foreground, #f48771);
   --success: var(--vscode-testing-iconPassed, #89d185);
   --success-foreground: var(--vscode-editor-background, #1e1e1e);
   --border: var(--vscode-panel-border, #3c3c3c);

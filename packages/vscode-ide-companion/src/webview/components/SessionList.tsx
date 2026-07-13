@@ -15,6 +15,7 @@ import {
 } from "@/webview/components/ui/drawer";
 import { Button } from "@/webview/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/webview/components/ui/input-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
 
 interface SessionListProps {
   sessions: SessionSummary[];
@@ -85,9 +86,16 @@ export default function SessionList({ sessions, activeSessionId, onSelect, onCre
   return (
     <Drawer direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
       <DrawerTrigger asChild>
-        <Button variant="ghost" size="icon" className="shrink-0 cursor-pointer" title="Show Agent Sessions Sidebar">
-          <PanelRight className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0 cursor-pointer" title="Show Agent Sessions Sidebar">
+              <PanelRight className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Sessions</p>
+          </TooltipContent>
+        </Tooltip>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
