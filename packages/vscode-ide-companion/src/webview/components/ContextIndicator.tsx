@@ -17,7 +17,7 @@ function formatTokenCount(value: unknown): string {
   return n.toLocaleString();
 }
 
-export default function ContextMeter({ tokenTelemetry }: ContextMeterProps) {
+export default function ContextIndicator({ tokenTelemetry }: ContextMeterProps) {
   const activeTokens = tokenTelemetry?.activeTokens || 0;
   const percent = getTokenUsagePercent(tokenTelemetry);
   const usedRows = flattenUsageFields(tokenTelemetry?.usage);

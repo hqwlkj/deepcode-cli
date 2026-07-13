@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import SkillsPanel from "@/webview/components/SkillsPanel";
 import SkillsTags from "@/webview/components/SkillsTags";
-import ContextMeter from "@/webview/components/ContextMeter";
+import ContextIndicator from "@/webview/components/ContextIndicator";
 import { PromptAttachments, usePromptAttachments } from "@/webview/components/PromptAttachments";
 import type { ActiveEditor, EditingMessage, SkillInfo, TokenTelemetry } from "@/webview/types";
-import { FileCodeIcon, Send, Square } from "lucide-react";
+import { FileCodeIcon, Reply, Square } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/webview/components/ui/input-group";
 import { Separator } from "@/webview/components/ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { cn } from "@/webview/lib/utils";
 import { Field, FieldGroup } from "./ui/field";
+import { Spinner } from "@/webview/components/ui/spinner";
 
 export interface InputPromptProps {
   loading: boolean;
@@ -152,7 +153,6 @@ export default function InputPrompt({
     [handleSend, history, historyIdx, value, draftBeforeHistory]
   );
 
-  const isProcessing = loading;
   const hasContent = value.trim().length > 0 || attachments.length > 0;
 
   return (
@@ -189,7 +189,7 @@ export default function InputPrompt({
               }}
             />
             <Separator orientation="vertical" className="h-5 mt-1.5" />
-            <ContextMeter tokenTelemetry={tokenTelemetry} />
+            <ContextIndicator tokenTelemetry={tokenTelemetry} />
             <Separator orientation="vertical" className="h-5 mt-1.5" />
             {activeEditor && (
               <HoverCard openDelay={300} closeDelay={100}>
@@ -204,7 +204,7 @@ export default function InputPrompt({
                 </HoverCardTrigger>
                 <HoverCardContent className="text-xs space-y-1">
                   <div className="font-medium truncate">{activeEditor.fileName.split("/").pop()}</div>
-                  <div className="text-muted-foreground">{activeEditor.fileName}</div>
+                  <p className="text-muted-foreground text-wrap break-all line-clamp-3">{activeEditor.fileName}</p>
                   <div className="flex gap-3 text-muted-foreground">
                     <span>{activeEditor.languageId}</span>
                     <span>{activeEditor.lineCount} lines</span>
@@ -212,28 +212,29 @@ export default function InputPrompt({
                 </HoverCardContent>
               </HoverCard>
             )}
-            {isProcessing ? (
+            {loading ? (
               <InputGroupButton
-                variant="ghost"
+                variant="secondary"
                 size="icon-sm"
-                className="ml-auto h-7 w-7"
+                className="ml-auto group"
                 onClick={onInterrupt}
                 title="Stop"
               >
-                <Square className="h-4 w-4" />
+                <Square className="h-3 w-3 hidden fill-primary group-hover:block" strokeWidth={0} />
+                <Spinner className="h-4 w-4 block group-hover:hidden text-primary" />
               </InputGroupButton>
             ) : (
               <InputGroupButton
                 variant="default"
-                className={cn("h-7 w-7 ml-auto cursor-pointer", {
-                  "cursor-not-allowed!": !hasContent && !isProcessing,
+                className={cn("ml-auto cursor-pointer", {
+                  "cursor-not-allowed!": !hasContent && !loading,
                 })}
                 onClick={handleSend}
-                disabled={!hasContent && !isProcessing}
+                disabled={!hasContent && !loading}
                 title="Send"
                 size="icon-sm"
               >
-                <Send />
+                <Reply className="rotate-x-180" />
               </InputGroupButton>
             )}
           </InputGroupAddon>

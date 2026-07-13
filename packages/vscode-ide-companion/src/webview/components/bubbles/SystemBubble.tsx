@@ -3,6 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/webview/c
 import BubbleDot from "@/webview/components/bubbles/BubbleDot";
 import { ChevronDown } from "lucide-react";
 import { Button } from "../ui/button";
+import Markdown from "@/webview/components/markdown";
 
 interface SystemBubbleProps {
   content: string;
@@ -28,7 +29,9 @@ export default function SystemBubble({ content, meta, shouldConnect = false }: S
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="w-auto">
-          <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap p-2">{skillDescription}</div>
+          <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap p-2">
+            <Markdown>{skillDescription}</Markdown>
+          </div>
         </CollapsibleContent>
       </div>
     </Collapsible>

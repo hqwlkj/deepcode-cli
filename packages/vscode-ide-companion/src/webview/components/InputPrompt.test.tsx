@@ -23,7 +23,7 @@ vi.mock("@/webview/components/SkillsTags", () => ({
   default: vi.fn(({ children }) => <div data-testid="skills-tags">{children}</div>),
 }));
 
-vi.mock("@/webview/components/ContextMeter", () => ({
+vi.mock("@/webview/components/ContextIndicator", () => ({
   default: vi.fn(() => <div data-testid="context-meter" />),
 }));
 
