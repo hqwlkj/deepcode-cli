@@ -16,6 +16,13 @@ export default function App() {
         onSelectSession={actions.selectSession}
         onCreateNewSession={actions.createNewSession}
       />
+      <Messages
+        messages={state.messages}
+        loading={state.loading}
+        llmStreamProgress={state.llmStreamProgress}
+        processes={state.processes}
+        onEditMessage={actions.editMessage}
+      />
       <PermissionPrompt
         askPermissions={state.askPermissions}
         sessionStatus={state.activeSessionStatus}
@@ -26,13 +33,6 @@ export default function App() {
         onSendPrompt={actions.sendPrompt}
         activeSessionId={state.activeSessionId}
         onInterrupt={actions.interrupt}
-      />
-      <Messages
-        messages={state.messages}
-        loading={state.loading}
-        llmStreamProgress={state.llmStreamProgress}
-        processes={state.processes}
-        onEditMessage={actions.editMessage}
       />
       {state.loading && (
         <ThinkingLiveBubble

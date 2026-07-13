@@ -88,7 +88,13 @@ export default function SessionList({ sessions, activeSessionId, onSelect, onCre
       <DrawerTrigger asChild>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0 cursor-pointer" title="Show Agent Sessions Sidebar">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 cursor-pointer"
+              title="Show Agent Sessions Sidebar"
+              onClick={() => setDrawerOpen(true)}
+            >
               <PanelRight className="h-4 w-4" />
             </Button>
           </TooltipTrigger>

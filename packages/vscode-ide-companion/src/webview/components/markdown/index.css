@@ -132,7 +132,7 @@
 
 .markdown-content pre {
   margin: 1em 0;
-  padding: 1em;
+  /*padding: 1em;*/
   overflow-x: auto;
   background-color: var(--muted, rgba(0, 0, 0, 0.05));
   border: 1px solid var(--border);

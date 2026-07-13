@@ -23,7 +23,6 @@ export default function Messages({ messages, loading, llmStreamProgress, process
   console.log("processes: ", processes);
 
   useEffect(() => {
-    console.log("messages:", JSON.stringify(messages));
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
@@ -33,7 +32,7 @@ export default function Messages({ messages, loading, llmStreamProgress, process
         {messages.map((msg, index) => {
           const prevMsg = index > 0 ? messages[index - 1] : null;
           const shouldConnect = prevMsg ? prevMsg.role !== "user" && msg.role !== "user" : false;
-          console.log(`Rendering message ${index}:`, JSON.stringify(msg));
+
           switch (msg.role) {
             case "user":
               return (

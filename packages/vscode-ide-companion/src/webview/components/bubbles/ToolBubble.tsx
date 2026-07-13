@@ -6,6 +6,7 @@ import PlanRenderer from "@/webview/components/PlanRenderer";
 import DiffPreview from "@/webview/components/DiffPreview";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/webview/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
 
 interface ToolBubbleProps {
   content: string;
@@ -59,7 +60,7 @@ export default function ToolBubble({ content, meta, shouldConnect = false }: Too
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="relative flex w-full gap-2 mb-3">
-      <BubbleDot variant={isOk ? "success" : "error"} connectToPrev={shouldConnect} className="mt-4" />
+      <BubbleDot variant={isOk ? "success" : "error"} connectToPrev={shouldConnect} className="mt-3.5" />
       <div className="absolute left-0.75 h-full w-px bg-muted-foreground top-6"></div>
       <div className="flex-1 min-w-0">
         <CollapsibleTrigger asChild>
@@ -69,7 +70,16 @@ export default function ToolBubble({ content, meta, shouldConnect = false }: Too
           >
             <span className="font-medium">{toolName}</span>
             {paramsMd && (
-              <div className="text-xs break-all w-auto text-left flex-1 text-muted-foreground truncate">{paramsMd}</div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-1 min-w-0 text-left text-xs text-muted-foreground cursor-pointer">
+                    <span className="text-wrap line-clamp-1">{paramsMd}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{paramsMd}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
             <ChevronDown className={`ml-auto group-data-[state=open]:rotate-180`} />
           </Button>

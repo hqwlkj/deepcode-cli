@@ -68,12 +68,10 @@ export default function PlanRenderer({ plan }: PlanRendererProps) {
                   : "text-muted-foreground";
 
           return (
-            <div key={i} className="pl-2">
-              <div className="flex items-center gap-2 py-0.5" style={{ paddingLeft: `${indent * 16}px` }}>
-                <span className={`size-4 font-mono text-xs ${colorClass}`}>{label || " "}</span>
-                <div className="break-normal text-nowrap w-auto truncate flex-1">
-                  <span dangerouslySetInnerHTML={{ __html: toInlineHtml(taskMatch[3].trim()) }} />
-                </div>
+            <div key={i} className="pl-2 min-w-0">
+              <div className="flex items-start gap-2 py-0.5 min-w-0" style={{ paddingLeft: `${indent * 16}px` }}>
+                <span className={`shrink-0 size-4 mt-0.5 font-mono text-xs ${colorClass}`}>{label || " "}</span>
+                <span className="text-xs" dangerouslySetInnerHTML={{ __html: toInlineHtml(taskMatch[3].trim()) }} />
               </div>
             </div>
           );

@@ -51,7 +51,7 @@ export default function ThinkingLiveBubble({
   }, [llmStreamProgress, processes]);
 
   return (
-    <div className="flex gap-2 mb-3 px-4">
+    <div className="flex gap-2 mb-3 px-4 w-full max-w-237.5 mx-auto min-w-sm">
       <BubbleDot connectToPrev={shouldConnect} className="mt-1" />
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Spinner className="h-3 w-3" />
