@@ -7,6 +7,7 @@ import DiffPreview from "@/webview/components/DiffPreview";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/webview/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
+import ProgressShimmer from "@/webview/components/ProgressShimmer";
 
 interface ToolBubbleProps {
   content: string;
@@ -47,6 +48,7 @@ export default function ToolBubble({ content, meta, shouldConnect = false }: Too
 
   // Special rendering for AskUserQuestion
   if (isAskUserQuestion) {
+    return <ProgressShimmer>{(toolData.metadata?.questions || []).length || 0} confirmation pending</ProgressShimmer>;
     return (
       <div className="relative flex gap-2 mb-3">
         <BubbleDot variant={isOk ? "success" : "error"} connectToPrev={shouldConnect} />

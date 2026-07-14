@@ -147,4 +147,9 @@ export const chatService = {
     const result = await wrpc.openSettings.mutate();
     return result as { ok: boolean };
   },
+
+  async showAlert(message: string): Promise<{ ok: boolean }> {
+    const result = await wrpc.showAlert.mutate(message);
+    return result as { ok: boolean };
+  },
 };

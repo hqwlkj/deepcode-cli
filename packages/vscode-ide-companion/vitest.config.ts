@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@/webview": path.resolve(__dirname, "./src/webview"),
+      vscode: path.resolve(__dirname, "./src/tests/__mocks__/vscode.ts"),
     },
   },
   test: {

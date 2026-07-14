@@ -1,4 +1,5 @@
 import { initWRPC } from "@webview-rpc/host";
+import * as vscodeApi from "vscode";
 import z from "zod";
 import type { SessionManager, SkillInfo, UserToolPermission, PermissionScope } from "@vegamo/deepcode-core";
 
@@ -240,6 +241,11 @@ export const appRouter = router({
 
   openSettings: procedure.resolve(async ({ ctx }) => {
     await ctx.openSettings();
+    return { ok: true };
+  }),
+  showAlert: procedure.input(z.string()).resolve(({ input }) => {
+    console.log("[Extension] Received message:", input);
+    vscodeApi.window.showInformationMessage(input);
     return { ok: true };
   }),
 });

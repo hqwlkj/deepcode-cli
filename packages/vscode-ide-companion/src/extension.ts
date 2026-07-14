@@ -18,6 +18,8 @@ import {
 import { getWebviewContent } from "./getWebviewContent.js";
 import { appRouter, type RouterContext } from "./router.js";
 import { attachRouterToPanel } from "@webview-rpc/host";
+import { createLogger } from "./utils/logger.js";
+import { checkForUpdates } from "./utils/checkForUpdates.js";
 
 const DEFAULT_MODEL = "deepseek-v4-pro";
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
@@ -25,6 +27,9 @@ const DEFAULT_BASE_URL = "https://api.deepseek.com";
 type ReasoningMessageParams = {
   reasoning_content?: string;
 };
+
+let log: (message: string) => void = () => {};
+let logger: vscode.OutputChannel;
 
 export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "deepcode.chatView";
@@ -279,8 +284,21 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   }
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   process.env.NoDefaultCurrentDirectoryInExePath = "1";
+  logger = vscode.window.createOutputChannel("Deep Code");
+  log = createLogger(context, logger);
+  log("Extension activated");
+
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    log("Running in Development mode");
+  } else if (context.extensionMode === vscode.ExtensionMode.Production) {
+    log("Running in Production mode");
+    await checkForUpdates(context, log);
+  } else {
+    log("Running in Test mode");
+  }
+
   try {
     setShellIfWindows();
   } catch (error) {
@@ -326,8 +344,18 @@ export function activate(context: vscode.ExtensionContext): void {
       await vscode.commands.executeCommand("deepcode.chatView.focus");
     })
   );
+  context.subscriptions.push(logger);
 }
 
 export function deactivate(): void {
-  // no-op
+  try {
+    log("Extension deactivated");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log(`Error during deactivation: ${message}`);
+  } finally {
+    if (logger) {
+      logger.dispose();
+    }
+  }
 }

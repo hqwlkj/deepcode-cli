@@ -11,6 +11,28 @@ import { vi } from "vitest";
 // Global mocks
 // ---------------------------------------------------------------------------
 
+// Mock VS Code module for extension utilities
+vi.mock("vscode", () => ({
+  window: {
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+    showTextDocument: vi.fn(),
+    activeTextEditor: undefined,
+  },
+  commands: {
+    executeCommand: vi.fn(),
+    registerCommand: vi.fn(),
+  },
+  ExtensionMode: {
+    Development: 1,
+    Production: 2,
+    Test: 3,
+  },
+  Uri: {
+    file: vi.fn((path: string) => ({ fsPath: path })),
+  },
+}));
+
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -44,6 +66,7 @@ class IntersectionObserverMock implements IntersectionObserver {
   rootMargin: string = "";
   thresholds: ReadonlyArray<number> = [];
   constructor() {}
+  scrollMargin: string = "";
 }
 window.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 

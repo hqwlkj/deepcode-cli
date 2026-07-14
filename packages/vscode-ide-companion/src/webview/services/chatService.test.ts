@@ -45,6 +45,9 @@ vi.mock("@/webview/wrpc", () => ({
     openSettings: {
       mutate: vi.fn(),
     },
+    showAlert: {
+      mutate: vi.fn(),
+    },
   },
 }));
 
@@ -275,6 +278,25 @@ describe("chatService", () => {
       const result = await chatService.openSettings();
 
       expect(result).toEqual({ ok: true });
+    });
+  });
+
+  describe("showAlert", () => {
+    it("shows alert message and returns ok", async () => {
+      vi.mocked(wrpc.showAlert.mutate).mockResolvedValue({ ok: true } as any);
+
+      const result = await chatService.showAlert("Test message");
+
+      expect(result).toEqual({ ok: true });
+      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith("Test message");
+    });
+
+    it("passes any message string to wrpc", async () => {
+      vi.mocked(wrpc.showAlert.mutate).mockResolvedValue({ ok: true } as any);
+
+      await chatService.showAlert("New chat button clicked");
+
+      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith("New chat button clicked");
     });
   });
 });
