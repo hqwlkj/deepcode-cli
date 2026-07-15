@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/webview/components/ui/collapsible";
 import BubbleDot from "@/webview/components/bubbles/BubbleDot";
-// import AskUserQuestion from "@/webview/components/AskUserQuestion";
 import DiffPreview from "@/webview/components/DiffPreview";
 import PlanRenderer from "@/webview/components/PlanRenderer";
 import { ChevronDown } from "lucide-react";

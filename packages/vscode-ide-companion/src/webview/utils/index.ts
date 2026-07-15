@@ -1,5 +1,5 @@
 import type { TokenTelemetry } from "@/webview/types";
-import type { AnswerFormValues } from "@/webview/components/AskUserQuestion";
+import type { AnswerFormValues } from "@/webview/components/AskQuestionCarousel";
 
 export function flattenUsageFields(value: unknown, prefix = "") {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
