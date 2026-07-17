@@ -12,7 +12,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import InputPrompt, { type InputPromptProps } from "./InputPrompt";
-import type { SkillInfo } from "@/webview/types";
+import type { SessionMessage, SkillInfo } from "@/webview/types";
 
 // Mock dependencies
 vi.mock("@/webview/components/SkillsPanel", () => ({
@@ -136,8 +136,6 @@ const defaultProps: InputPromptProps = {
   selectedSkills: [] as SkillInfo[],
   availableSkills: [] as SkillInfo[],
   pendingPermissionReply: null,
-  askPermissions: [],
-  activeSessionStatus: null,
   tokenTelemetry: {
     model: "test",
     thinkingEnabled: false,
@@ -413,7 +411,7 @@ describe("InputPrompt", () => {
 
   describe("Loading history from messages", () => {
     it("loads user messages from messages prop into history", async () => {
-      const messages = [
+      const messages: SessionMessage[] = [
         { role: "user", content: "First message from history" },
         { role: "assistant", content: "Assistant response" },
         { role: "user", content: "Second message from history" },
@@ -456,7 +454,7 @@ describe("InputPrompt", () => {
     });
 
     it("ignores non-user messages when building history", async () => {
-      const messages = [
+      const messages: SessionMessage[] = [
         { role: "user", content: "User message" },
         { role: "assistant", content: "Should be ignored" },
         { role: "tool", content: "Should also be ignored" },
