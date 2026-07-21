@@ -29,7 +29,7 @@
   /* editorHoverWidget is used for hover popups like HoverCard */
   --popover: var(--vscode-editorHoverWidget-background, var(--vscode-sideBar-background, #ffffff));
   --popover-foreground: var(--vscode-editorHoverWidget-foreground, var(--vscode-sideBar-foreground, #333333));
-  --primary: var(--vscode-button-background, #0066cc);
+  --primary: #4d6bfe;
   --primary-foreground: var(--vscode-button-foreground, #ffffff);
   --secondary: var(--vscode-toolbar-background, #e8e8e8);
   --secondary-foreground: var(--vscode-toolbar-foreground, #333333);
@@ -45,7 +45,7 @@
   --color-input: var(--vscode-input-border, var(--border));
   /* Input background uses editor background */
   --input-bg: var(--vscode-input-background, #ffffff);
-  --ring: var(--vscode-focusBorder, #0066cc);
+  --ring: #4d6bfe;;
   --chart-1: var(--vscode-charts-blue, #0066cc);
   --chart-2: var(--vscode-charts-orange, #cc6600);
   --chart-3: var(--vscode-charts-green, #22863a);
@@ -117,7 +117,7 @@
   /* editorHoverWidget is used for hover popups like HoverCard */
   --popover: var(--vscode-editorHoverWidget-background, var(--vscode-sideBar-background, #252526));
   --popover-foreground: var(--vscode-editorHoverWidget-foreground, var(--vscode-sideBar-foreground, #cccccc));
-  --primary: var(--vscode-button-background, #0e639c);
+  --primary: #4d6bfe;
   --primary-foreground: var(--vscode-button-foreground, #ffffff);
   --secondary: var(--vscode-toolbar-background, #2d2d2d);
   --secondary-foreground: var(--vscode-toolbar-foreground, #cccccc);
@@ -130,7 +130,7 @@
   --success-foreground: var(--vscode-editor-background, #1e1e1e);
   --border: var(--vscode-panel-border, #3c3c3c);
   --input: var(--vscode-input-background, #3c3c3c);
-  --ring: var(--vscode-focusBorder, #0e639c);
+  --ring: #4d6bfe;;
   --chart-1: var(--vscode-charts-blue, #75baff);
   --chart-2: var(--vscode-charts-orange, #d18616);
   --chart-3: var(--vscode-charts-green, #89d185);

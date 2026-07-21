@@ -10,6 +10,7 @@ import ToolBubble, {
 import SystemBubble from "@/webview/components/bubbles/SystemBubble";
 import type { EditingMessage, SessionMessage } from "@/webview/types";
 import AskQuestionSummary from "@/webview/components/AskQuestionSummary";
+import icon from "../../../assets/deepcoding_icon.png";
 
 interface MessagesProps {
   messages: SessionMessage[];
@@ -23,7 +24,6 @@ const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const handleToBottom = () => {
-      console.log("handleToBottom");
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     };
     useEffect(() => {
@@ -34,6 +34,17 @@ const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     //   return bottomRef.current ? bottomRef.current : undefined;
     // })
 
+    if (messages.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col justify-center items-center w-full">
+          <img src={icon} alt="" className="size-32 shrink-0 mb-6" />
+          <div className="mb-3 text-[16px] font-semibold">Welcome to the Deep Code AI IDE!</div>
+          <p className="text-xs text-muted-foreground">
+            What would you like to do? Ask about this codebase or we can start writing code.
+          </p>
+        </div>
+      );
+    }
     return (
       <ScrollArea
         ref={ref}

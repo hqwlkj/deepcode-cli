@@ -249,7 +249,7 @@ export default function PermissionPrompt({
 
   return (
     <div className="px-4 py-2 w-full max-w-237.5 mx-auto min-w-sm">
-      <div className="rounded-md border border-(--vscode-focusBorder) bg-(--vscode-editor-background) p-3 text-sm">
+      <div className="rounded-md border border-primary bg-background p-3 text-sm">
         <div className="flex items-center justify-between mb-2">
           <div>
             <span className="font-medium">Permission required</span>

@@ -15,7 +15,7 @@ export default function SkillsTags({ selectedSkills, onRemove }: SkillsTagsProps
   return (
     <InputGroupAddon className="flex flex-wrap gap-1.5" align="block-start">
       {selectedSkills.map((skill) => (
-        <Badge key={skill.name} variant="secondary" className="h-6 gap-1 rounded-md text-xs pr-0">
+        <Badge key={skill.name} variant="secondary" className="h-6 gap-1 rounded text-xs pr-0">
           {skill.name}
           <Button
             variant="ghost"

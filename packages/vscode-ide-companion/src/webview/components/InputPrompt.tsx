@@ -4,7 +4,7 @@ import SkillsTags from "@/webview/components/SkillsTags";
 import ContextIndicator from "@/webview/components/ContextIndicator";
 import { PromptAttachments, usePromptAttachments } from "@/webview/components/PromptAttachments";
 import type { ActiveEditor, EditingMessage, SessionMessage, SkillInfo, TokenTelemetry } from "@/webview/types";
-import { FileCodeIcon, Reply, Siren, Square } from "lucide-react";
+import { FileCodeIcon, Hand, Reply, Siren, Square, SquareChartGantt } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/webview/components/ui/input-group";
 import { Separator } from "@/webview/components/ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
@@ -13,6 +13,16 @@ import { Field, FieldDescription, FieldGroup } from "./ui/field";
 import { Spinner } from "@/webview/components/ui/spinner";
 import { Switch } from "@/webview/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/webview/components/ui/dropdown-menu";
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/webview/components/ui/item";
 
 export interface InputPromptProps {
   loading: boolean;
@@ -54,7 +64,7 @@ export default function InputPrompt({
   onClearEditingMessage,
 }: InputPromptProps) {
   const [value, setValue] = useState<string>("");
-  const [planMode, setPlanMode] = useState<boolean>(false);
+  const [planMode, setPlanMode] = useState<"false" | "true">("false");
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState<number>(-1);
   const [draftBeforeHistory, setDraftBeforeHistory] = useState<string>("");
@@ -125,7 +135,7 @@ export default function InputPrompt({
     setValue("");
     setHistoryIdx(-1);
 
-    onSendPrompt(trimmed, selectedSkills, images, { ...reply, planMode });
+    onSendPrompt(trimmed, selectedSkills, images, { ...reply, planMode: planMode === "true" });
     onSelectSkills([]);
     clearAttachments();
     onClearEditingMessage();
@@ -237,18 +247,6 @@ export default function InputPrompt({
               }}
             />
             <Separator orientation="vertical" className="h-5 mt-1.5" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-pointer">
-                  <Siren className="size-3.5" />
-                  <Switch id="switch-size-sm" checked={planMode} onCheckedChange={(e) => setPlanMode(e)} size="sm" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Plan Mode</p>
-              </TooltipContent>
-            </Tooltip>
-            <Separator orientation="vertical" className="h-5 mt-1.5" />
             <ContextIndicator tokenTelemetry={tokenTelemetry} />
             <Separator orientation="vertical" className="h-5 mt-1.5" />
             {activeEditor && (
@@ -272,31 +270,86 @@ export default function InputPrompt({
                 </HoverCardContent>
               </HoverCard>
             )}
-            {loading ? (
-              <InputGroupButton
-                variant="secondary"
-                size="icon-sm"
-                className="ml-auto group"
-                onClick={onInterrupt}
-                title="Stop"
-              >
-                <Square className="h-3 w-3 hidden fill-primary group-hover:block" strokeWidth={0} />
-                <Spinner className="h-4 w-4 block group-hover:hidden text-primary" />
-              </InputGroupButton>
-            ) : (
-              <InputGroupButton
-                variant="default"
-                className={cn("ml-auto cursor-pointer", {
-                  "cursor-not-allowed!": !hasContent && !loading,
-                })}
-                onClick={handleSend}
-                disabled={!hasContent && !loading}
-                title="Send"
-                size="icon-sm"
-              >
-                <Reply className="rotate-x-180" />
-              </InputGroupButton>
-            )}
+            <div className="ml-auto flex gap-2 items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <InputGroupButton variant="ghost" className="h-8">
+                    {planMode === "true" ? (
+                      <div className="flex items-center gap-0.5">
+                        <SquareChartGantt className="size-3.5" strokeWidth={1.5} />
+                        <span className="text-xs font-normal">Plan</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-0.5">
+                        <Hand className="size-3.5" strokeWidth={1.5} />
+                        <span className="text-xs font-normal">Default</span>
+                      </div>
+                    )}
+                  </InputGroupButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80" side="top" align="end">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Modes</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={planMode}
+                      onValueChange={(value) => setPlanMode(value as "true" | "false")}
+                    >
+                      <DropdownMenuRadioItem value="false">
+                        <Item size="xs">
+                          <ItemMedia variant="icon">
+                            <Hand className="size-4.5 mt-2.5" strokeWidth={1.5} />
+                          </ItemMedia>
+                          <ItemContent>
+                            <ItemTitle className="text-xs">Default</ItemTitle>
+                            <ItemDescription className="text-[10px]">
+                              Deep code will ask for approval before making each edit
+                            </ItemDescription>
+                          </ItemContent>
+                        </Item>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="true">
+                        <Item size="xs">
+                          <ItemMedia variant="icon">
+                            <SquareChartGantt className="size-4.5 mt-2.5" strokeWidth={1.5} />
+                          </ItemMedia>
+                          <ItemContent>
+                            <ItemTitle className="text-xs">Plan</ItemTitle>
+                            <ItemDescription className="text-[8px]">
+                              Deep code will explore the code and present a plan before editing
+                            </ItemDescription>
+                          </ItemContent>
+                        </Item>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {loading ? (
+                <InputGroupButton
+                  variant="secondary"
+                  size="icon-sm"
+                  className="group"
+                  onClick={onInterrupt}
+                  title="Stop"
+                >
+                  <Square className="h-3 w-3 hidden fill-primary group-hover:block" strokeWidth={0} />
+                  <Spinner className="h-4 w-4 block group-hover:hidden text-primary" />
+                </InputGroupButton>
+              ) : (
+                <InputGroupButton
+                  variant="default"
+                  className={cn("cursor-pointer", {
+                    "cursor-not-allowed!": !hasContent && !loading,
+                  })}
+                  onClick={handleSend}
+                  disabled={!hasContent && !loading}
+                  title="Send"
+                  size="icon-sm"
+                >
+                  <Reply className="rotate-x-180" />
+                </InputGroupButton>
+              )}
+            </div>
           </InputGroupAddon>
           <SkillsTags
             selectedSkills={selectedSkills}
