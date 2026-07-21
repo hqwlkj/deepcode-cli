@@ -3,6 +3,7 @@ import { Button } from "@/webview/components/ui/button";
 import type { AppAction, AskPermissionRequest, PermissionPromptState, SkillInfo } from "@/webview/types";
 import { ShieldAlert, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/webview/components/ui/alert";
+import { capitalize } from "@/webview/utils";
 
 export interface PermissionPromptProps {
   askPermissions: AskPermissionRequest[];
@@ -267,7 +268,7 @@ export default function PermissionPrompt({
           </Button>
         </div>
 
-        <div className="font-semibold mb-1">{prompt.request.name}</div>
+        <div className="font-semibold mb-1">{capitalize(prompt.request.name)}</div>
         <div className="text-xs text-muted-foreground mb-1 break-all">{prompt.request.command || "(no command)"}</div>
         {prompt.request.description && (
           <div className="text-xs text-muted-foreground mb-2">{prompt.request.description}</div>
