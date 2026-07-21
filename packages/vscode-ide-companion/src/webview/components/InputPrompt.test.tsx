@@ -89,6 +89,24 @@ vi.mock("@/webview/components/ui/popover", () => ({
   PopoverContent: vi.fn(({ children }) => <div data-testid="popover-content">{children}</div>),
 }));
 
+vi.mock("@/webview/components/ui/tooltip", () => ({
+  Tooltip: vi.fn(({ children }) => <div data-testid="tooltip">{children}</div>),
+  TooltipTrigger: vi.fn(({ children }) => <div data-testid="tooltip-trigger">{children}</div>),
+  TooltipContent: vi.fn(({ children }) => <div data-testid="tooltip-content">{children}</div>),
+}));
+
+vi.mock("@/webview/components/ui/switch", () => ({
+  Switch: vi.fn(({ checked, onCheckedChange, ...props }) => (
+    <input
+      type="checkbox"
+      data-testid="switch"
+      checked={checked}
+      onChange={(e) => onCheckedChange?.(e.target.checked)}
+      {...props}
+    />
+  )),
+}));
+
 vi.mock("@/webview/components/PromptAttachments", () => ({
   PromptAttachments: vi.fn(({ attachments }) => (
     <div data-testid="prompt-attachments">{attachments.length} attachments</div>
@@ -114,6 +132,7 @@ vi.mock("lucide-react", () => ({
   Send: vi.fn(() => <span data-testid="send-icon" />),
   Reply: vi.fn(() => <span data-testid="reply-icon" />),
   FileCodeIcon: vi.fn(() => <span data-testid="file-icon" />),
+  Siren: vi.fn(() => <span data-testid="siren-icon" />),
   GraduationCap: vi.fn(() => <span data-testid="graduation-icon" />),
   X: vi.fn(() => <span data-testid="x-icon" />),
   AlertCircle: vi.fn(() => <span data-testid="alert-icon" />),
@@ -170,7 +189,7 @@ describe("InputPrompt", () => {
       const textarea = screen.getByRole("textbox");
       fireEvent.change(textarea, { target: { value: "Hello" } });
       fireEvent.keyDown(textarea, { key: "Enter" });
-      expect(mockOnSendPrompt).toHaveBeenCalledWith("Hello", [], [], undefined);
+      expect(mockOnSendPrompt).toHaveBeenCalledWith("Hello", [], [], { planMode: false });
     });
 
     it("does not send empty message", () => {
@@ -185,7 +204,7 @@ describe("InputPrompt", () => {
       const textarea = screen.getByRole("textbox");
       fireEvent.change(textarea, { target: { value: "  Hello   " } });
       fireEvent.keyDown(textarea, { key: "Enter" });
-      expect(mockOnSendPrompt).toHaveBeenCalledWith("Hello", [], [], undefined);
+      expect(mockOnSendPrompt).toHaveBeenCalledWith("Hello", [], [], { planMode: false });
     });
 
     it("does not send while loading", () => {
@@ -222,11 +241,11 @@ describe("InputPrompt", () => {
 
       fireEvent.change(textarea, { target: { value: "First message" } });
       fireEvent.keyDown(textarea, { key: "Enter" });
-      expect(mockOnSendPrompt).toHaveBeenCalledWith("First message", [], [], undefined);
+      expect(mockOnSendPrompt).toHaveBeenCalledWith("First message", [], [], { planMode: false });
 
       fireEvent.change(textarea, { target: { value: "Second message" } });
       fireEvent.keyDown(textarea, { key: "Enter" });
-      expect(mockOnSendPrompt).toHaveBeenCalledWith("Second message", [], [], undefined);
+      expect(mockOnSendPrompt).toHaveBeenCalledWith("Second message", [], [], { planMode: false });
     });
 
     it("navigates to previous history with ArrowUp when at start", async () => {
@@ -566,7 +585,7 @@ describe("InputPrompt", () => {
         fireEvent.click(sendButton);
       }
 
-      expect(mockOnSendPrompt).toHaveBeenCalledWith("Editing this message", [], [], undefined);
+      expect(mockOnSendPrompt).toHaveBeenCalledWith("Editing this message", [], [], { planMode: false });
       expect(mockOnClearEditingMessage).toHaveBeenCalled();
     });
 
