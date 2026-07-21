@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/webview/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
 import ProgressShimmer from "@/webview/components/ProgressShimmer";
+import { capitalize } from "@/webview/utils";
 export interface ToolBubbleProps {
   content: string;
   meta?: {
@@ -270,7 +271,7 @@ export default function ToolBubble({
             variant="ghost"
             className="group w-full flex data-[state=open]:rounded-b-none data-[state=open]:border-muted"
           >
-            <span className="font-medium">{name}</span>
+            <span className="font-medium">{capitalize(name)}</span>
             {paramsMd && (
               <Tooltip>
                 <TooltipTrigger asChild>

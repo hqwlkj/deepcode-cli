@@ -66,6 +66,15 @@ export function toTitleCase(str: string): string {
 }
 
 /**
+ * 将字符串的首字母大写。
+ * @param str
+ */
+export function capitalize(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
  * 构建 AskUserQuestion 的回复。
  * @param questions
  */

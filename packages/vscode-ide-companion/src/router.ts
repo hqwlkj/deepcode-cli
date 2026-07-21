@@ -15,6 +15,8 @@ export interface RouterContext {
   openSettings: () => Promise<void>;
   getActiveEditor: () => { fileName: string; languageId: string; lineCount: number } | null;
   openChatPanel: (sessionId: string, viewColumn: number) => void;
+  showDiffEditor: (filePath: string, diffPreview: string) => Promise<void>;
+  getFileContent: (filePath: string) => string;
 }
 
 export const { router, procedure } = initWRPC.context<RouterContext>().create();
@@ -338,6 +340,23 @@ export const appRouter = router({
   openExternal: procedure.input(z.object({ url: z.string() })).resolve(async ({ input }) => {
     await vscodeApi.env.openExternal(vscodeApi.Uri.parse(input.url));
     return { ok: true };
+  }),
+
+  showDiffEditor: procedure
+    .input(
+      z.object({
+        filePath: z.string(),
+        diffPreview: z.string(),
+      })
+    )
+    .resolve(async ({ ctx, input }) => {
+      await ctx.showDiffEditor(input.filePath, input.diffPreview);
+      return { ok: true };
+    }),
+
+  getFileContent: procedure.input(z.object({ filePath: z.string() })).resolve(({ ctx, input }) => {
+    const content = ctx.getFileContent(input.filePath);
+    return { content };
   }),
 });
 

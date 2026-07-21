@@ -20,6 +20,7 @@ import { appRouter, type RouterContext } from "./router.js";
 import { attachRouterToPanel } from "@webview-rpc/host";
 import { createLogger } from "./utils/logger.js";
 import { checkForUpdates } from "./utils/checkForUpdates.js";
+import { reverseApplyDiff } from "./utils/diff-utils.js";
 
 const DEFAULT_MODEL = "deepseek-v4-pro";
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
@@ -174,6 +175,8 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
         // Switch to this session
         this.sessionManager.setActiveSessionId(sessionId);
       },
+      getFileContent: (filePath) => this.getFileContent(filePath),
+      showDiffEditor: (filePath, diffPreview) => this.openDiffEditor(filePath, diffPreview),
     };
 
     // Attach RPC router
@@ -323,6 +326,61 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
     const position = new vscode.Position(safeLine, 0);
     editor.selection = new vscode.Selection(position, position);
     editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+  }
+
+  /**
+   * Get the raw file content from disk.
+   */
+  private getFileContent(filePath: string): string {
+    return fs.readFileSync(filePath, "utf8");
+  }
+
+  /**
+   * Open a VS Code native diff editor showing the before/after of a file edit.
+   *
+   * The current file on disk contains the modified version (after the edit was
+   * applied). The diff_preview from the tool result metadata is used to
+   * reconstruct the original content by reverse-applying the unified diff.
+   */
+  private async openDiffEditor(filePath: string, diffPreview: string): Promise<void> {
+    try {
+      // Read the current (modified) file content from disk
+      const modifiedContent = this.getFileContent(filePath);
+
+      // Reconstruct the original content by reverse-applying the diff
+      const originalContent = reverseApplyDiff(modifiedContent, diffPreview);
+
+      if (originalContent === null) {
+        void vscode.window.showWarningMessage(
+          `Unable to reconstruct original content for diff. The file may have been modified since the edit.`
+        );
+        return;
+      }
+
+      // Create temp files for the diff editor
+      const tempDir = path.join(os.tmpdir(), "deepcode-diff");
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      const baseName = path.basename(filePath);
+      const timestamp = Date.now();
+      const originalPath = path.join(tempDir, `${baseName}.${timestamp}.original`);
+      const modifiedPath = path.join(tempDir, `${baseName}.${timestamp}.modified`);
+
+      fs.writeFileSync(originalPath, originalContent, "utf8");
+      fs.writeFileSync(modifiedPath, modifiedContent, "utf8");
+
+      const originalUri = vscode.Uri.file(originalPath);
+      const modifiedUri = vscode.Uri.file(modifiedPath);
+      const title = `${baseName} (Original ↔ Modified)`;
+
+      // Open VS Code's native diff editor
+      await vscode.commands.executeCommand("vscode.diff", originalUri, modifiedUri, title);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`Diff editor error: ${message}`);
+    }
   }
 }
 
