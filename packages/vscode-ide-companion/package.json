@@ -5,6 +5,16 @@
   "displayName": "Deep Code",
   "description": "Deep Code VSCode companion — AI-assisted development in your editor",
   "license": "MIT",
+  "homepage": "https://deepcode.vegamo.cn",
+  "bugs": {
+    "url": "https://github.com/lessweb/deepcode-cli/issues"
+  },
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "qna": false,
+  "pricing": "Free",
   "type": "module",
   "main": "./dist/extension.js",
   "preview": true,
