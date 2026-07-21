@@ -1,16 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import type { SessionSummary } from "@/webview/types";
-import {
-  MessageCircle,
-  PanelRight,
-  Search,
-  Pencil,
-  Trash2,
-  FileText,
-  Columns2,
-  ExternalLink,
-  FileCodeCorner,
-} from "lucide-react";
+import { MessageCircle, PanelRight, Search, Pencil, Trash2, FileText, FileCodeCorner } from "lucide-react";
 import { Empty, EmptyDescription, EmptyMedia, EmptyHeader, EmptyTitle } from "@/webview/components/ui/empty";
 import { cn } from "@/webview/lib/utils";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "./ui/item";

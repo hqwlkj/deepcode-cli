@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useRef, useEffect, forwardRef } from "react";
 import { ScrollArea, ScrollBar } from "@/webview/components/ui/scroll-area";
 import UserBubble from "@/webview/components/bubbles/UserBubble";
 import AssistantBubble from "@/webview/components/bubbles/AssistantBubble";

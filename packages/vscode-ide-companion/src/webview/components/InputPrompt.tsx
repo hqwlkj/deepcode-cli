@@ -4,15 +4,13 @@ import SkillsTags from "@/webview/components/SkillsTags";
 import ContextIndicator from "@/webview/components/ContextIndicator";
 import { PromptAttachments, usePromptAttachments } from "@/webview/components/PromptAttachments";
 import type { ActiveEditor, EditingMessage, SessionMessage, SkillInfo, TokenTelemetry } from "@/webview/types";
-import { FileCodeIcon, Hand, Reply, Siren, Square, SquareChartGantt } from "lucide-react";
+import { FileCodeIcon, Hand, Reply, Square, SquareChartGantt } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/webview/components/ui/input-group";
 import { Separator } from "@/webview/components/ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { cn } from "@/webview/lib/utils";
 import { Field, FieldDescription, FieldGroup } from "./ui/field";
 import { Spinner } from "@/webview/components/ui/spinner";
-import { Switch } from "@/webview/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
