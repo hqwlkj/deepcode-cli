@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer, createContext, useContext } from "react";
+import React, { useCallback, useEffect, useReducer, createContext, useContext, useRef } from "react";
 import { wrpc } from "@/webview/wrpc";
 import { chatService } from "@/webview/services/chatService";
 import type {
@@ -42,6 +42,7 @@ interface ChatContextValue {
     deleteSession: (sessionId: string) => Promise<void>;
     dismissContinuePrompt: () => void;
     continueGeneration: () => Promise<void>;
+    toggleSessionList: (open?: boolean) => void;
   };
 }
 
@@ -70,6 +71,7 @@ const initialState: AppState = {
   editingMessage: null,
   askUserQuestions: null,
   showContinuePrompt: false,
+  sessionListOpen: false,
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -173,6 +175,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, askUserQuestions: action.data };
     case "DISMISS_CONTINUE_PROMPT":
       return { ...state, showContinuePrompt: false };
+    case "TOGGLE_SESSION_LIST":
+      return { ...state, sessionListOpen: action.open !== undefined ? action.open : !state.sessionListOpen };
     default:
       return state;
   }
@@ -225,6 +229,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
       dispatch({ type: "SET_SKILLS", skills: skillsData.skills as SkillInfo[] });
     }
   }, [skillsData]);
+
+  // Ref to access createNewSession from message handler (stable callback, but kept for clarity)
+  const createNewSessionRef = useRef<() => Promise<void>>(async () => {});
+  createNewSessionRef.current = async () => {
+    const result = await chatService.createNewSession();
+    dispatch({ type: "INIT_EMPTY", sessions: result.sessions, tokenTelemetry: null });
+    if (result.skills) {
+      dispatch({ type: "SET_SKILLS", skills: result.skills });
+    }
+  };
 
   // Listen for streaming push messages from extension host
   useEffect(() => {
@@ -281,6 +295,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
         }
         case "loading":
           dispatch({ type: "SET_LOADING", loading: Boolean(message.value) });
+          break;
+        case "triggerNewChat":
+          void createNewSessionRef.current();
+          break;
+        case "triggerHistory":
+          dispatch({ type: "TOGGLE_SESSION_LIST" });
           break;
       }
     };
@@ -409,6 +429,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }, []);
 
+  const toggleSessionList = useCallback((open?: boolean) => {
+    dispatch({ type: "TOGGLE_SESSION_LIST", open });
+  }, []);
+
   const contextValue: ChatContextValue = {
     state,
     dispatch,
@@ -424,6 +448,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       deleteSession,
       dismissContinuePrompt,
       continueGeneration,
+      toggleSessionList,
     },
   };
 

@@ -49,6 +49,8 @@ interface SessionListProps {
   onCreateNewSession: () => void;
   onRename: (sessionId: string, summary: string) => void;
   onDelete: (sessionId: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function formatTime(dateString: string): string {
@@ -71,9 +73,22 @@ export default function SessionList({
   onCreateNewSession,
   onRename,
   onDelete,
+  open: controlledOpen,
+  onOpenChange,
 }: SessionListProps) {
   const [query, setQuery] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const drawerOpen = isControlled ? controlledOpen : internalOpen;
+  const setDrawerOpen = useCallback(
+    (open: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(open);
+      }
+      onOpenChange?.(open);
+    },
+    [isControlled, onOpenChange]
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [contextMenuOpenId, setContextMenuOpenId] = useState<string>();
@@ -83,7 +98,7 @@ export default function SessionList({
 
   const handleCloseDrawer = useCallback(() => {
     setDrawerOpen(false);
-  }, []);
+  }, [setDrawerOpen]);
 
   // Focus the edit input when editing starts
   useEffect(() => {
@@ -202,7 +217,7 @@ export default function SessionList({
         console.error("Failed to open chat panel:", err);
       }
     },
-    [onSelect, onCreateNewSession, handleCloseDrawer]
+    [onSelect, onCreateNewSession, handleCloseDrawer, activeSessionId]
   );
 
   const handleInspectJsonl = useCallback(async (sessionId: string) => {
@@ -259,7 +274,7 @@ export default function SessionList({
 
     document.addEventListener("keydown", handler, true);
     return () => document.removeEventListener("keydown", handler, true);
-  }, [contextMenuOpenId, sessions, handleContextMenuOpen]);
+  }, [contextMenuOpenId, sessions, handleContextMenuOpen, handleStartRename]);
 
   return (
     <Drawer
@@ -274,24 +289,26 @@ export default function SessionList({
         setDrawerOpen(open);
       }}
     >
-      <DrawerTrigger asChild>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 cursor-pointer"
-              title="Show Agent Sessions Sidebar"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <PanelRight className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Sessions</p>
-          </TooltipContent>
-        </Tooltip>
-      </DrawerTrigger>
+      {!isControlled && (
+        <DrawerTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 cursor-pointer"
+                title="Show Agent Sessions Sidebar"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <PanelRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Sessions</p>
+            </TooltipContent>
+          </Tooltip>
+        </DrawerTrigger>
+      )}
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Sessions</DrawerTitle>

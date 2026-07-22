@@ -45,6 +45,7 @@
     "onView:deepcode.chatView"
   ],
   "contributes": {
+    "markdown.markdownItPlugins": true,
     "commands": [
       {
         "command": "deepcode.openView",
@@ -53,6 +54,24 @@
           "light": "assets/deepcoding_icon.svg",
           "dark": "assets/deepcoding_icon.svg"
         }
+      },
+      {
+        "command": "deepcode.newchat",
+        "category": "Deep Code",
+        "title": "New Chat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "deepcode.settings",
+        "category": "Deep Code",
+        "title": "Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "deepcode.history",
+        "category": "Deep Code",
+        "title": "Show Chat History",
+        "icon": "$(layout-sidebar-right)"
       }
     ],
     "viewsContainers": {
@@ -79,6 +98,23 @@
         {
           "command": "deepcode.openView",
           "group": "navigation@100"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "deepcode.newchat",
+          "group": "navigation",
+          "when": "view == deepcode.chatView"
+        },
+        {
+          "command": "deepcode.settings",
+          "group": "navigation",
+          "when": "view == deepcode.chatView"
+        },
+        {
+          "command": "deepcode.history",
+          "group": "navigation",
+          "when": "view == deepcode.chatView"
         }
       ]
     }

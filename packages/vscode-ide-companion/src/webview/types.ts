@@ -115,6 +115,7 @@ export interface AppState {
   editingMessage: EditingMessage | null;
   askUserQuestions: AskUserQuestionData | null;
   showContinuePrompt: boolean;
+  sessionListOpen: boolean;
 }
 
 // --- App actions ---
@@ -153,4 +154,5 @@ export type AppAction =
   | { type: "SET_ACTIVE_EDITOR"; editor: ActiveEditor | null }
   | { type: "SET_EDITING_MESSAGE"; editingMessage: EditingMessage | null }
   | { type: "SET_ASK_USER_QUESTIONS"; data: AskUserQuestionData | null }
-  | { type: "DISMISS_CONTINUE_PROMPT" };
+  | { type: "DISMISS_CONTINUE_PROMPT" }
+  | { type: "TOGGLE_SESSION_LIST"; open?: boolean };

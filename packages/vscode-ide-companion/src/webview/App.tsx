@@ -29,6 +29,8 @@ export default function App() {
         onCreateNewSession={actions.createNewSession}
         onRenameSession={actions.renameSession}
         onDeleteSession={actions.deleteSession}
+        sessionListOpen={state.sessionListOpen}
+        onToggleSessionList={actions.toggleSessionList}
       />
       <Messages
         ref={messagesRef}

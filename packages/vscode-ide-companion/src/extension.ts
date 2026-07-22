@@ -21,6 +21,7 @@ import { attachRouterToPanel } from "@webview-rpc/host";
 import { createLogger } from "./utils/logger.js";
 import { checkForUpdates } from "./utils/checkForUpdates.js";
 import { reverseApplyDiff } from "./utils/diff-utils.js";
+import type MarkdownIt from "markdown-it";
 
 const DEFAULT_MODEL = "deepseek-v4-pro";
 const DEFAULT_BASE_URL = "https://api.deepseek.com";
@@ -252,9 +253,7 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private getWorkspaceRoot(): string {
-    const workspace = vscode.workspace.workspaceFolders?.[0];
-    if (workspace) return workspace.uri.fsPath;
-    return process.cwd();
+    return getWorkspaceRootFn();
   }
 
   private createOpenAIClient(): {
@@ -316,16 +315,7 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async openFileInEditor(filePath: string, line: number): Promise<void> {
-    const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
-    const editor = await vscode.window.showTextDocument(document, {
-      preview: false,
-      preserveFocus: false,
-    });
-    const targetLine = Number.isFinite(line) && line > 0 ? Math.floor(line) - 1 : 0;
-    const safeLine = Math.min(Math.max(0, targetLine), Math.max(0, document.lineCount - 1));
-    const position = new vscode.Position(safeLine, 0);
-    editor.selection = new vscode.Selection(position, position);
-    editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+    return openFileInEditorFn(filePath, line);
   }
 
   /**
@@ -384,7 +374,28 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   }
 }
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+async function openFileInEditorFn(filePath: string, line: number): Promise<void> {
+  const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+  const editor = await vscode.window.showTextDocument(document, {
+    preview: false,
+    preserveFocus: false,
+  });
+  const targetLine = Number.isFinite(line) && line > 0 ? Math.floor(line) - 1 : 0;
+  const safeLine = Math.min(Math.max(0, targetLine), Math.max(0, document.lineCount - 1));
+  const position = new vscode.Position(safeLine, 0);
+  editor.selection = new vscode.Selection(position, position);
+  editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+}
+
+function getWorkspaceRootFn(): string {
+  const workspace = vscode.workspace.workspaceFolders?.[0];
+  if (workspace) return workspace.uri.fsPath;
+  return process.cwd();
+}
+
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<{ extendMarkdownIt(md: MarkdownIt): MarkdownIt }> {
   process.env.NoDefaultCurrentDirectoryInExePath = "1";
   logger = vscode.window.createOutputChannel("Deep Code");
   log = createLogger(context, logger);
@@ -438,13 +449,57 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
+  // Open view
   context.subscriptions.push(
     vscode.commands.registerCommand("deepcode.openView", async () => {
       await vscode.commands.executeCommand("workbench.view.extension.deepcode");
       await vscode.commands.executeCommand("deepcode.chatView.focus");
     })
   );
+  // Open settings
+  context.subscriptions.push(
+    vscode.commands.registerCommand("deepcode.settings", async () => {
+      const projectRoot = getWorkspaceRootFn();
+      const projectSettingsPath = path.join(projectRoot, ".deepcode", "settings.json");
+      const userSettingsPath = path.join(os.homedir(), ".deepcode", "settings.json");
+
+      if (fs.existsSync(projectSettingsPath)) {
+        await openFileInEditorFn(projectSettingsPath, 1);
+      } else {
+        // Ensure user settings directory exists
+        const userSettingsDir = path.dirname(userSettingsPath);
+        if (!fs.existsSync(userSettingsDir)) {
+          fs.mkdirSync(userSettingsDir, { recursive: true });
+        }
+        if (!fs.existsSync(userSettingsPath)) {
+          fs.writeFileSync(userSettingsPath, JSON.stringify({}, null, 2), "utf8");
+        }
+        await openFileInEditorFn(userSettingsPath, 1);
+      }
+    })
+  );
+
+  // Create new chat
+  context.subscriptions.push(
+    vscode.commands.registerCommand("deepcode.newchat", () => {
+      log("deepcode.newchat");
+      provider.postMessageToWebview({ type: "triggerNewChat" });
+    })
+  );
+
+  // Show history
+  context.subscriptions.push(
+    vscode.commands.registerCommand("deepcode.history", () => {
+      log("deepcode.history");
+      provider.postMessageToWebview({ type: "triggerHistory" });
+    })
+  );
   context.subscriptions.push(logger);
+  return {
+    extendMarkdownIt(md: MarkdownIt) {
+      return md.use(require("markdown-it-task-lists"));
+    },
+  };
 }
 
 export function deactivate(): void {
