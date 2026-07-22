@@ -252,7 +252,7 @@ export default function InputPrompt({
               <HoverCard openDelay={300} closeDelay={100}>
                 <HoverCardTrigger asChild>
                   <InputGroupButton
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                     title={activeEditor.fileName}
                   >
                     <FileCodeIcon className="h-3 w-3" />

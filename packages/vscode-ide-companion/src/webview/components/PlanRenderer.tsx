@@ -84,14 +84,14 @@ export default function PlanRenderer({ plan }: PlanRendererProps) {
           return (
             <div key={i} className="flex items-start gap-2 py-0.5" style={{ paddingLeft: `${indent * 16}px` }}>
               <span className="shrink-0 text-muted-foreground">•</span>
-              <span dangerouslySetInnerHTML={{ __html: toInlineHtml(bulletMatch[2].trim()) }} />
+              <span className="text-xs" dangerouslySetInnerHTML={{ __html: toInlineHtml(bulletMatch[2].trim()) }} />
             </div>
           );
         }
 
         return (
           <p key={i} className="my-0.5 pl-4">
-            <span dangerouslySetInnerHTML={{ __html: toInlineHtml(line.trim()) }} />
+            <span className="text-xs" dangerouslySetInnerHTML={{ __html: toInlineHtml(line.trim()) }} />
           </p>
         );
       })}
