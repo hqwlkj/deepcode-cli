@@ -9,7 +9,7 @@
  */
 
 import { wrpc } from "@/webview/wrpc";
-import type { SkillInfo, SessionSummary, SessionMessage, AskPermissionRequest } from "@/webview/types";
+import type { SkillInfo, SessionSummary, SessionMessage, AskPermissionRequest, TokenTelemetry } from "@/webview/types";
 
 // ============================================================================
 // Types
@@ -36,6 +36,7 @@ export interface InitialData {
     messages: SessionMessage[];
   } | null;
   activeEditor: { fileName: string; languageId: string; lineCount: number } | null;
+  tokenTelemetry: TokenTelemetry;
 }
 
 export interface SelectSessionResult {
@@ -49,11 +50,13 @@ export interface SelectSessionResult {
   };
   sessions?: SessionSummary[];
   messages?: SessionMessage[];
+  tokenTelemetry?: TokenTelemetry;
 }
 
 export interface CreateSessionResult {
   sessions: SessionSummary[];
   skills?: SkillInfo[];
+  tokenTelemetry: TokenTelemetry;
 }
 
 // ============================================================================

@@ -249,7 +249,7 @@ export default function InputPrompt({
   const hasContent = useMemo(() => value.trim().length > 0 || attachments.length > 0, [value, attachments]);
 
   return (
-    <FieldGroup className="w-full max-w-237.5 mx-auto min-w-sm px-4 pt-1.5 pb-1">
+    <FieldGroup className="w-full max-w-237.5 mx-auto min-w-sm px-4 pt-1.5 pb-4">
       <Field className="gap-0.5">
         {getActiveSkill()}
         <InputGroup>
@@ -284,7 +284,7 @@ export default function InputPrompt({
             />
             <Separator orientation="vertical" className="h-5 mt-1.5" />
             <ContextIndicator tokenTelemetry={tokenTelemetry} />
-            <Separator orientation="vertical" className="h-5 mt-1.5" />
+            {activeEditor && <Separator orientation="vertical" className="h-5 mt-1.5" />}
             {activeEditor && (
               <HoverCard openDelay={300} closeDelay={100}>
                 <HoverCardTrigger asChild>
@@ -336,7 +336,7 @@ export default function InputPrompt({
                             <Hand className="size-4.5 mt-2.5" strokeWidth={1.5} />
                           </ItemMedia>
                           <ItemContent>
-                            <ItemTitle className="text-xs">Default</ItemTitle>
+                            <ItemTitle className="text-xs">Default Mode</ItemTitle>
                             <ItemDescription className="text-[10px]">
                               Deep Code will make edits and run commands to complete your task
                             </ItemDescription>
@@ -349,7 +349,7 @@ export default function InputPrompt({
                             <SquareChartGantt className="size-4.5 mt-2.5" strokeWidth={1.5} />
                           </ItemMedia>
                           <ItemContent>
-                            <ItemTitle className="text-xs">Plan</ItemTitle>
+                            <ItemTitle className="text-xs">Plan Mode</ItemTitle>
                             <ItemDescription className="text-[8px]">
                               Deep code will explore the code and present a plan before editing
                             </ItemDescription>
@@ -387,9 +387,6 @@ export default function InputPrompt({
           />
           <PromptAttachments attachments={attachments} onRemove={removeAttachment} />
         </InputGroup>
-        <FieldDescription className="text-center text-[12px]">
-          AI-generated content, for reference only
-        </FieldDescription>
       </Field>
     </FieldGroup>
   );

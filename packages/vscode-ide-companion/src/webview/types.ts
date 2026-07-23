@@ -47,7 +47,7 @@ export interface TokenTelemetry {
   reasoningEffort: string;
   activeTokens: number;
   compactPromptTokenThreshold: number;
-  usage: unknown;
+  usage: unknown | null;
 }
 
 export interface ActiveEditor {

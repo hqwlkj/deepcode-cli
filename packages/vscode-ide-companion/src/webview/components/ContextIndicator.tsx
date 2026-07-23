@@ -18,6 +18,7 @@ function formatTokenCount(value: unknown): string {
 }
 
 export default function ContextIndicator({ tokenTelemetry }: ContextMeterProps) {
+  console.log("ContextIndicator", tokenTelemetry);
   const activeTokens = tokenTelemetry?.activeTokens || 0;
   const percent = getTokenUsagePercent(tokenTelemetry);
   const usedRows = flattenUsageFields(tokenTelemetry?.usage);
@@ -41,19 +42,19 @@ export default function ContextIndicator({ tokenTelemetry }: ContextMeterProps) 
         <div className="space-y-1">
           <div className="flex justify-between">
             <span className="text-xs text-muted-foreground">Model</span>
-            <span className="text-primary">{tokenTelemetry?.model || "unknown"}</span>
+            <span className="text-primary font-semibold">{tokenTelemetry?.model || "unknown"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-xs text-muted-foreground">Thinking</span>
-            <span className="text-primary">{tokenTelemetry?.thinkingEnabled ? "true" : "false"}</span>
+            <span className="text-primary font-semibold">{tokenTelemetry?.thinkingEnabled ? "true" : "false"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-xs text-muted-foreground">Effort</span>
-            <span className="text-primary">{tokenTelemetry?.reasoningEffort || "max"}</span>
+            <span className="text-primary font-semibold">{tokenTelemetry?.reasoningEffort || "max"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-xs text-muted-foreground">Active Tokens</span>
-            <span className="text-primary">{formatTokenCount(activeTokens)}</span>
+            <span className="text-primary font-semibold">{formatTokenCount(activeTokens)}</span>
           </div>
         </div>
         {usedRows?.length > 0 && (
@@ -64,7 +65,7 @@ export default function ContextIndicator({ tokenTelemetry }: ContextMeterProps) 
               {(usedRows || []).map(([key, value]) => (
                 <div className="flex justify-between" key={key}>
                   <span className="text-xs text-muted-foreground">{toTitleCase(formatUsageFieldLabel(key))}</span>
-                  <span className="text-primary">{formatTokenCount(value)}</span>
+                  <span className="text-primary font-normal">{formatTokenCount(value)}</span>
                 </div>
               ))}
             </div>

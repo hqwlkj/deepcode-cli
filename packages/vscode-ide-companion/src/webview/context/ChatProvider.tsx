@@ -208,7 +208,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   useEffect(() => {
     if (initialData) {
-      const { sessions, activeSession, activeEditor } = initialData;
+      const { sessions, activeSession, activeEditor, tokenTelemetry } = initialData;
       if (activeSession) {
         dispatch({
           type: "LOAD_SESSION",
@@ -218,10 +218,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
           sessions,
           askPermissions: activeSession.askPermissions as AskPermissionRequest[] | undefined,
           processes: activeSession.processes,
-          tokenTelemetry: null,
+          tokenTelemetry: tokenTelemetry ?? null,
         });
       } else {
-        dispatch({ type: "INIT_EMPTY", sessions, tokenTelemetry: null });
+        dispatch({ type: "INIT_EMPTY", sessions, tokenTelemetry: tokenTelemetry ?? null });
       }
       if (activeEditor) {
         dispatch({
@@ -244,7 +244,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const createNewSessionRef = useRef<() => Promise<void>>(async () => {});
   createNewSessionRef.current = async () => {
     const result = await chatService.createNewSession();
-    dispatch({ type: "INIT_EMPTY", sessions: result.sessions, tokenTelemetry: null });
+    dispatch({ type: "INIT_EMPTY", sessions: result.sessions, tokenTelemetry: result.tokenTelemetry ?? null });
     if (result.skills) {
       dispatch({ type: "SET_SKILLS", skills: result.skills });
     }
@@ -254,6 +254,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const message = event.data as Record<string, unknown> | undefined;
+      console.log("message", message);
       if (!message?.type) return;
 
       switch (message.type) {
@@ -372,7 +373,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const createNewSession = useCallback(async () => {
     const result = await chatService.createNewSession();
-    dispatch({ type: "INIT_EMPTY", sessions: result.sessions, tokenTelemetry: null });
+    dispatch({ type: "INIT_EMPTY", sessions: result.sessions, tokenTelemetry: result.tokenTelemetry ?? null });
     if (result.skills) {
       dispatch({ type: "SET_SKILLS", skills: result.skills });
     }
@@ -389,7 +390,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         sessions: result.sessions ?? [],
         askPermissions: result.session.askPermissions,
         processes: result.session.processes,
-        tokenTelemetry: null,
+        tokenTelemetry: result.tokenTelemetry ?? null,
       });
       const skillsResult = await chatService.getSkills(sessionId);
       if (skillsResult.length > 0) {

@@ -4,7 +4,14 @@ import * as path from "node:path";
 import * as vscodeApi from "vscode";
 import z from "zod";
 import { getProjectCode } from "@vegamo/deepcode-core";
-import type { SessionManager, SkillInfo, UserToolPermission, PermissionScope } from "@vegamo/deepcode-core";
+import type {
+  SessionManager,
+  SkillInfo,
+  UserToolPermission,
+  PermissionScope,
+  SessionEntry,
+} from "@vegamo/deepcode-core";
+import type { TokenTelemetry } from "@/webview/types";
 import { ATTACHMENT_LABEL } from "@/webview/constants";
 
 export interface RouterContext {
@@ -18,6 +25,7 @@ export interface RouterContext {
   openChatPanel: (sessionId: string, viewColumn: number) => void;
   showDiffEditor: (filePath: string, diffPreview: string) => Promise<void>;
   getFileContent: (filePath: string) => string;
+  buildTokenTelemetry: (session: SessionEntry | null) => TokenTelemetry;
 }
 
 export const { router, procedure } = initWRPC.context<RouterContext>().create();
@@ -120,6 +128,7 @@ export const appRouter = router({
           }
         : null,
       activeEditor,
+      tokenTelemetry: ctx.buildTokenTelemetry(activeSession),
     };
   }),
 
@@ -191,7 +200,7 @@ export const appRouter = router({
     ctx.sessionManager.setActiveSessionId(null);
     const sessions = ctx.sessionManager.listSessions();
     const skills = await ctx.sessionManager.listSkills();
-    return { sessions: toSessionList(sessions), skills };
+    return { sessions: toSessionList(sessions), skills, tokenTelemetry: ctx.buildTokenTelemetry(null) };
   }),
 
   selectSession: procedure.input(z.string()).resolve(({ ctx, input: sessionId }) => {
@@ -222,6 +231,7 @@ export const appRouter = router({
           content: m.content || (m.messageParams as { reasoning_content?: string } | null)?.reasoning_content || "",
           meta: m.meta,
         })),
+      tokenTelemetry: ctx.buildTokenTelemetry(session),
     };
   }),
 

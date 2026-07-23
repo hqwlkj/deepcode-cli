@@ -32,6 +32,7 @@ type ReasoningMessageParams = {
 
 let log: (message: string) => void = () => {};
 let logger: vscode.OutputChannel;
+let deepCodeViewProvider: DeepCodeViewProvider;
 
 export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "deepcode.chatView";
@@ -104,6 +105,7 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
       copyToClipboard: (text) => void vscode.env.clipboard.writeText(text),
       openFileInEditor: (filePath, line) => this.openFileInEditor(filePath, line),
       getWorkspaceRoot: () => this.getWorkspaceRoot(),
+      buildTokenTelemetry: (session) => this.buildTokenTelemetry(session),
       openSettings: async () => {
         // Open project-level settings if exists, otherwise user-level
         const projectRoot = this.getWorkspaceRoot();
@@ -189,7 +191,7 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  private buildTokenTelemetry(session: SessionEntry | null): {
+  buildTokenTelemetry(session: SessionEntry | null): {
     model: string;
     thinkingEnabled: boolean;
     reasoningEffort: ReasoningEffort;
@@ -232,10 +234,15 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
   private readUserSettings(): DeepcodingSettings | null {
     try {
       const settingsPath = path.join(os.homedir(), ".deepcode", "settings.json");
-      if (!fs.existsSync(settingsPath)) return null;
+      if (!fs.existsSync(settingsPath)) {
+        return null;
+      }
+
       const raw = fs.readFileSync(settingsPath, "utf8");
       return JSON.parse(raw) as DeepcodingSettings;
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`Failed to read ~/.deepcode/settings.json: ${message}`);
       return null;
     }
   }
@@ -244,10 +251,17 @@ export class DeepCodeViewProvider implements vscode.WebviewViewProvider {
     const workspaceRoot = this.getWorkspaceRoot();
     try {
       const settingsPath = path.join(workspaceRoot, ".deepcode", "settings.json");
-      if (!fs.existsSync(settingsPath)) return null;
+      if (!fs.existsSync(settingsPath)) {
+        return null;
+      }
+
       const raw = fs.readFileSync(settingsPath, "utf8");
       return JSON.parse(raw) as DeepcodingSettings;
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(
+        `Failed to read ${path.join(workspaceRoot, ".deepcode", "settings.json")}: ${message}`
+      );
       return null;
     }
   }
@@ -417,10 +431,10 @@ export async function activate(
     void vscode.window.showErrorMessage(message);
   }
 
-  const provider = new DeepCodeViewProvider(context);
-  context.subscriptions.push(provider);
+  deepCodeViewProvider = new DeepCodeViewProvider(context);
+  context.subscriptions.push(deepCodeViewProvider);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(DeepCodeViewProvider.viewType, provider, {
+    vscode.window.registerWebviewViewProvider(DeepCodeViewProvider.viewType, deepCodeViewProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     })
   );
@@ -430,7 +444,7 @@ export async function activate(
     const editor = vscode.window.activeTextEditor;
     if (editor?.document) {
       const doc = editor.document;
-      provider.postMessageToWebview({
+      deepCodeViewProvider.postMessageToWebview({
         type: "activeEditor",
         fileName: doc.fileName,
         languageId: doc.languageId,
@@ -483,7 +497,7 @@ export async function activate(
   context.subscriptions.push(
     vscode.commands.registerCommand("deepcode.newchat", () => {
       log("deepcode.newchat");
-      provider.postMessageToWebview({ type: "triggerNewChat" });
+      deepCodeViewProvider.postMessageToWebview({ type: "triggerNewChat" });
     })
   );
 
@@ -491,7 +505,7 @@ export async function activate(
   context.subscriptions.push(
     vscode.commands.registerCommand("deepcode.history", () => {
       log("deepcode.history");
-      provider.postMessageToWebview({ type: "triggerHistory" });
+      deepCodeViewProvider.postMessageToWebview({ type: "triggerHistory" });
     })
   );
   context.subscriptions.push(logger);
@@ -505,6 +519,9 @@ export async function activate(
 export function deactivate(): void {
   try {
     log("Extension deactivated");
+    if (deepCodeViewProvider) {
+      deepCodeViewProvider.dispose();
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log(`Error during deactivation: ${message}`);

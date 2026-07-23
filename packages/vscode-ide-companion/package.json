@@ -17,7 +17,7 @@
   "pricing": "Free",
   "type": "module",
   "main": "./dist/extension.js",
-  "preview": true,
+  "preview": false,
   "repository": {
     "type": "git",
     "url": "https://github.com/lessweb/deepcode-cli.git",
