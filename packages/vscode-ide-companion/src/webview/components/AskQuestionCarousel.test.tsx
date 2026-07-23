@@ -50,7 +50,13 @@ vi.mock("react-hook-form", () => {
       };
     }),
     Controller: vi.fn(
-      ({ render: renderFn }: { render: (fieldProps: Record<string, unknown>) => React.ReactNode; name: string }) => {
+      ({
+        render: renderFn,
+        name,
+      }: {
+        render: (fieldProps: Record<string, unknown>) => React.ReactNode;
+        name: string;
+      }) => {
         const parts = name.split(".");
         const subField = parts.length >= 4 ? parts[3] : "options";
 

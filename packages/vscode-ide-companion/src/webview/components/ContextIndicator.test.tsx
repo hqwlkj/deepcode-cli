@@ -142,7 +142,7 @@ describe("ContextIndicator", () => {
   });
 
   it("does not show separator when no usage data", () => {
-    render(<ContextIndicator tokenTelemetry={{ activeTokens: 100 }} />);
+    render(<ContextIndicator tokenTelemetry={{ ...baseTelemetry, activeTokens: 100 }} />);
     expect(screen.queryByTestId("separator")).not.toBeInTheDocument();
   });
 
