@@ -71,7 +71,7 @@
         "command": "deepcode.history",
         "category": "Deep Code",
         "title": "Show Chat History",
-        "icon": "$(layout-sidebar-right)"
+        "icon": "$(history)"
       }
     ],
     "viewsContainers": {

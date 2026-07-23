@@ -1,9 +1,13 @@
-import { useMemo, useCallback, useState, useEffect } from "react";
+import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { Button } from "@/webview/components/ui/button";
 import type { AppAction, AskPermissionRequest, PermissionPromptState, SkillInfo } from "@/webview/types";
-import { ShieldAlert, X } from "lucide-react";
+import { ShieldAlert, X, ChevronDownIcon, ChevronLeft, ChevronRight, Terminal } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/webview/components/ui/alert";
 import { capitalize } from "@/webview/utils";
+import type { CarouselApi } from "@/webview/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/webview/components/ui/carousel";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/webview/components/ui/collapsible";
+import { Card, CardContent } from "@/webview/components/ui/card";
 
 export interface PermissionPromptProps {
   askPermissions: AskPermissionRequest[];
@@ -105,11 +109,17 @@ export default function PermissionPrompt({
   onSendPrompt,
   onInterrupt,
 }: PermissionPromptProps) {
+  const [api, setApi] = React.useState<CarouselApi>();
+  const carouselApiRef = useRef<CarouselApi>(null);
+  const pendingScrollRef = useRef<number | null>(null);
+  const [open, setOpen] = React.useState(true);
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
   const normalized = useMemo(() => normalizeRequests(askPermissions), [askPermissions]);
   const isAskPermission = sessionStatus === "ask_permission" && normalized.length > 0;
   const isDenied = (pendingPermissionReply && sessionStatus === "permission_denied") as boolean;
 
-  // Build prompts from requests
+  // Build prompts from requests — one per (request, scope) pair
   const prompts = useMemo(() => {
     const result: Array<{ request: AskPermissionRequest; scope: string }> = [];
     for (const req of normalized) {
@@ -121,43 +131,50 @@ export default function PermissionPrompt({
     return result;
   }, [normalized]);
 
-  // Use internal state for decisions
+  // Internal state for decisions (no sequential index — carousel manages position)
   const [localState, setLocalState] = useState<{
-    index: number;
     decisions: Record<string, "allow" | "deny">;
     alwaysAllows: string[];
     submitting: boolean;
-  }>({ index: 0, decisions: {}, alwaysAllows: [], submitting: false });
+  }>({ decisions: {}, alwaysAllows: [], submitting: false });
 
   // Reset when prompts change
   useEffect(() => {
-    setLocalState({ index: 0, decisions: {}, alwaysAllows: [], submitting: false });
+    setLocalState({ decisions: {}, alwaysAllows: [], submitting: false });
   }, [askPermissions]);
 
-  const findNextIdx = useCallback(
-    (fromIdx: number, alwaysAllows: string[]) => {
-      let idx = fromIdx;
-      while (idx < prompts.length) {
-        const scope = prompts[idx].scope;
-        if (VALID_SCOPES.includes(scope) && alwaysAllows.includes(scope)) {
-          idx++;
-          continue;
-        }
-        return idx;
-      }
-      return prompts.length;
-    },
-    [prompts]
-  );
+  // Store carousel API in ref for stable access from callbacks (avoids stale closures)
+  useEffect(() => {
+    carouselApiRef.current = api || null;
+  }, [api]);
 
-  const effectiveIndex = findNextIdx(localState.index, localState.alwaysAllows);
+  // Sync carousel slide counter
+  useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
+  // Execute pending auto-scroll after React commits the state update
+  useEffect(() => {
+    if (pendingScrollRef.current !== null && carouselApiRef.current) {
+      const idx = pendingScrollRef.current;
+      pendingScrollRef.current = null;
+      carouselApiRef.current.scrollTo(idx);
+    }
+  });
 
   const commitDecision = useCallback(
-    (kind: "allow" | "deny" | "always") => {
-      if (localState.submitting || effectiveIndex >= prompts.length) return;
+    (kind: "allow" | "deny" | "always", slideIndex: number) => {
+      if (localState.submitting) return;
 
       setLocalState((prev) => {
-        const prompt = prompts[effectiveIndex];
+        const prompt = prompts[slideIndex];
+        if (!prompt) return prev;
+
         const newDecisions = { ...prev.decisions };
         const newAlwaysAllows = [...prev.alwaysAllows];
 
@@ -176,18 +193,28 @@ export default function PermissionPrompt({
           }
         }
 
-        const nextIdx = effectiveIndex + 1;
-        const nextEffective = findNextIdx(nextIdx, newAlwaysAllows);
+        // Find next undecided prompt after the current slide
+        let nextIdx = slideIndex + 1;
+        while (nextIdx < prompts.length) {
+          const s = prompts[nextIdx].scope;
+          const t = prompts[nextIdx].request.toolCallId;
+          if (VALID_SCOPES.includes(s) && newAlwaysAllows.includes(s)) {
+            nextIdx++;
+            continue;
+          }
+          if (newDecisions[t] !== undefined) {
+            nextIdx++;
+            continue;
+          }
+          break;
+        }
 
-        if (nextEffective >= prompts.length) {
-          // Submit
-          const permissions = normalized.map((req): { toolCallId: string; permission: "allow" | "deny" } => {
-            const decision = newDecisions[req.toolCallId];
-            return {
-              toolCallId: req.toolCallId,
-              permission: decision === "deny" ? "deny" : "allow",
-            };
-          });
+        if (nextIdx >= prompts.length) {
+          // All prompts decided — submit
+          const permissions = normalized.map((req) => ({
+            toolCallId: req.toolCallId,
+            permission: (newDecisions[req.toolCallId] === "deny" ? "deny" : "allow") as "allow" | "deny",
+          }));
           const hasDeny = permissions.some((p) => p.permission === "deny");
 
           if (hasDeny) {
@@ -203,29 +230,22 @@ export default function PermissionPrompt({
             });
           }
 
-          return { ...prev, index: nextIdx, decisions: newDecisions, alwaysAllows: newAlwaysAllows, submitting: true };
+          return { ...prev, decisions: newDecisions, alwaysAllows: newAlwaysAllows, submitting: true };
         }
 
-        return { ...prev, index: nextIdx, decisions: newDecisions, alwaysAllows: newAlwaysAllows };
+        // Schedule auto-scroll to the next undecided prompt (executed after render via useEffect)
+        pendingScrollRef.current = nextIdx;
+
+        return { ...prev, decisions: newDecisions, alwaysAllows: newAlwaysAllows };
       });
     },
-    [
-      localState,
-      effectiveIndex,
-      prompts,
-      normalized,
-      findNextIdx,
-      dispatch,
-      onDenyPermission,
-      onSendPrompt,
-      activeSessionId,
-    ]
+    [localState, prompts, normalized, dispatch, onDenyPermission, onSendPrompt, activeSessionId]
   );
 
   const handleCancel = useCallback(() => {
     dispatch({ type: "SET_PENDING_PERMISSION_REPLY", reply: null });
     onInterrupt();
-    setLocalState({ index: 0, decisions: {}, alwaysAllows: [], submitting: false });
+    setLocalState({ decisions: {}, alwaysAllows: [], submitting: false });
   }, [dispatch, onInterrupt]);
 
   if (!isAskPermission && !isDenied) return null;
@@ -242,56 +262,111 @@ export default function PermissionPrompt({
     );
   }
 
-  const prompt = prompts[effectiveIndex];
-  if (!prompt) return null;
+  if (prompts.length === 0) return null;
 
-  const canAlwaysAllow = VALID_SCOPES.includes(prompt.scope);
+  // Header label — show the tool name from the first prompt
+  const headerLabel = `Permission required — ${capitalize(prompts[0].request.name || "Tool")}`;
 
   return (
-    <div className="px-4 pt-2 w-full max-w-237.5 mx-auto min-w-sm">
-      <div className="rounded-md border border-primary bg-background p-3 text-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <span className="font-medium">Permission required</span>
-            <span className="ml-2 text-xs text-muted-foreground">
-              {effectiveIndex + 1}/{prompts.length}
-            </span>
+    <div className="w-full max-w-237.5 mx-auto min-w-sm px-4 py-2">
+      <div className="border border-primary rounded-md w-full">
+        <CardContent>
+          <Collapsible open={open} onOpenChange={setOpen}>
+            <CollapsibleTrigger asChild>
+              <div className="group flex justify-between items-center cursor-pointer px-2 w-full">
+                <span className="text-primary py-2 text-sm font-medium truncate">{headerLabel}</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancel();
+                    }}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                  <ChevronDownIcon className="ml-auto size-4 group-data-[state=open]:rotate-180" />
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="flex flex-col items-start gap-2 text-sm">
+              <Carousel setApi={setApi} className="w-full">
+                <CarouselContent>
+                  {prompts.map((p, idx) => (
+                    <CarouselItem
+                      key={`${p.request.toolCallId}-${p.scope}-${idx}`}
+                      data-key={`${p.request.toolCallId}-${p.scope}-${idx}`}
+                    >
+                      <Card className="m-0 rounded-none py-0 bg-transparent" size="sm">
+                        <CardContent className="py-0">
+                          <div className="font-semibold text-[13px] flex items-center mb-1">
+                            <Terminal className="size-3.5 mr-1" strokeWidth={1.5} />
+                            {capitalize(p.request.name)}
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-1 break-all">
+                            {p.request.command || "(no command)"}
+                          </div>
+                          {p.request.description && (
+                            <div className="text-xs text-muted-foreground mb-2">{p.request.description}</div>
+                          )}
+                          <div
+                            className={`inline-block rounded px-2 py-0.5 text-xs font-medium mb-2 ${getRiskClass(p.scope)}`}
+                          >
+                            {describeScope(p.scope)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </CollapsibleContent>
+          </Collapsible>
+        </CardContent>
+        {/* Navigation footer — matches AskQuestionCarousel style */}
+        <div className="flex flex-col text-sm px-2 py-2">
+          <div className="text-xs mb-2">Do you want to proceed?</div>
+          <div className="flex gap-2 items-center">
+            <div className="flex gap-2 flex-wrap">
+              <Button size="xs" variant="default" onClick={() => commitDecision("allow", current - 1)}>
+                Yes
+              </Button>
+              {VALID_SCOPES.includes(prompts[current - 1]?.scope || "") && (
+                <Button size="xs" variant="secondary" onClick={() => commitDecision("always", current - 1)}>
+                  Yes, and always allow this scope
+                </Button>
+              )}
+              <Button size="xs" variant="outline" onClick={() => commitDecision("deny", current - 1)}>
+                No
+              </Button>
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              {open && (
+                <>
+                  <Button
+                    variant="ghost"
+                    disabled={!api?.canScrollPrev()}
+                    size="icon-xs"
+                    onClick={() => api?.scrollPrev()}
+                  >
+                    <ChevronLeft className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={!api?.canScrollNext()}
+                    size="icon-xs"
+                    onClick={() => api?.scrollNext()}
+                  >
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </>
+              )}
+              <span className="text-xs ml-1">
+                {current}/{count}
+              </span>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className="cursor-pointer border-none bg-transparent p-0 text-muted-foreground hover:text-foreground"
-            onClick={handleCancel}
-            title="Interrupt"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="font-semibold mb-1">{capitalize(prompt.request.name)}</div>
-        <div className="text-xs text-muted-foreground mb-1 break-all">{prompt.request.command || "(no command)"}</div>
-        {prompt.request.description && (
-          <div className="text-xs text-muted-foreground mb-2">{prompt.request.description}</div>
-        )}
-
-        <div className={`inline-block rounded px-2 py-0.5 text-xs font-medium mb-2 ${getRiskClass(prompt.scope)}`}>
-          {describeScope(prompt.scope)}
-        </div>
-
-        <div className="text-xs mb-2">Do you want to proceed?</div>
-
-        <div className="flex gap-2 flex-wrap">
-          <Button size="xs" variant="default" onClick={() => commitDecision("allow")}>
-            Yes
-          </Button>
-          {canAlwaysAllow && (
-            <Button size="xs" variant="secondary" onClick={() => commitDecision("always")}>
-              Yes, and always allow this scope
-            </Button>
-          )}
-          <Button size="xs" variant="outline" onClick={() => commitDecision("deny")}>
-            No
-          </Button>
         </div>
       </div>
     </div>

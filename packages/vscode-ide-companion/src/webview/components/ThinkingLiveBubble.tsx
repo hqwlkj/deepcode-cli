@@ -48,9 +48,9 @@ export default function ThinkingLiveBubble({ llmStreamProgress, processes }: Thi
   return (
     <div className="flex gap-2 mb-3 px-4 w-full max-w-237.5 mx-auto min-w-sm">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Spinner className="size-3.5" />
-        <ProgressShimmer className="font-medium">Thinking</ProgressShimmer>
-        <span className="text-xs">{statusText}</span>
+        <Spinner className="size-3.5 shrink-0" />
+        <ProgressShimmer className="font-medium shrink-0">Thinking</ProgressShimmer>
+        <span className="flex-1 text-xs truncate">{statusText}</span>
       </div>
     </div>
   );

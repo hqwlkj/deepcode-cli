@@ -33,6 +33,10 @@ vi.mock("@/webview/components/ui/hover-card", () => ({
 vi.mock("lucide-react", () => ({
   X: vi.fn(() => <span data-testid="x-icon" />),
   ShieldAlert: vi.fn(() => <span data-testid="shield-icon" />),
+  ChevronDownIcon: vi.fn(() => <span data-testid="chevron-down-icon" />),
+  ChevronLeft: vi.fn(() => <span data-testid="chevron-left-icon" />),
+  ChevronRight: vi.fn(() => <span data-testid="chevron-right-icon" />),
+  Terminal: vi.fn(() => <span data-testid="terminal-icon" />),
 }));
 
 const mockDispatch = vi.fn<(action: AppAction) => void>();
@@ -87,7 +91,8 @@ describe("PermissionPrompt", () => {
       sessionStatus: "ask_permission" as const,
     };
     render(<PermissionPrompt {...props} />);
-    expect(screen.getByText("Permission required")).toBeInTheDocument();
+    // Header now includes tool name via capitalize in the collapsible trigger
+    expect(screen.getByText(/Permission required/)).toBeInTheDocument();
   });
 
   it("renders denied state when permission denied", () => {
@@ -155,8 +160,9 @@ describe("PermissionPrompt", () => {
       sessionStatus: "ask_permission" as const,
     };
     render(<PermissionPrompt {...props} />);
-    const cancelButton = screen.getByTitle("Interrupt");
-    fireEvent.click(cancelButton);
+    // The close (X) button in the collapsible header calls handleCancel -> onInterrupt
+    const xIcon = screen.getByTestId("x-icon");
+    fireEvent.click(xIcon);
     expect(mockOnInterrupt).toHaveBeenCalled();
   });
 
@@ -171,7 +177,7 @@ describe("PermissionPrompt", () => {
     expect(document.body.innerHTML).toContain("bg-green-500/15");
   });
 
-  it("renders multiple permission requests with index", () => {
+  it("renders multiple permission requests in carousel layout", () => {
     const props = {
       ...defaultProps,
       askPermissions: [
@@ -181,6 +187,11 @@ describe("PermissionPrompt", () => {
       sessionStatus: "ask_permission" as const,
     };
     render(<PermissionPrompt {...props} />);
-    expect(screen.getByText("1/2")).toBeInTheDocument();
+    // Carousel navigation elements should be present (prev/next buttons)
+    expect(screen.getByTestId("chevron-left-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("chevron-right-icon")).toBeInTheDocument();
+    // Both tool names should be rendered as carousel slides
+    expect(screen.getByText("Read")).toBeInTheDocument();
+    expect(screen.getByText("Write")).toBeInTheDocument();
   });
 });

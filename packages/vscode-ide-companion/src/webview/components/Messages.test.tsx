@@ -52,7 +52,7 @@ describe("Messages", () => {
 
   it("renders welcome screen when no messages", () => {
     render(<Messages {...defaultProps} />);
-    expect(screen.getByText("Welcome to the Deep Code AI IDE!")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to the Deep Code!")).toBeInTheDocument();
   });
 
   it("renders user message", () => {

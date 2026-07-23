@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { CircleAlert, CircleCheckBig, Clock } from "lucide-react";
+import { Circle, CircleAlert, CircleCheckBig, Clock } from "lucide-react";
 
 interface PlanRendererProps {
   plan: string;
@@ -56,7 +56,7 @@ export default function PlanRenderer({ plan }: PlanRendererProps) {
             ) : status === "attention" ? (
               <CircleAlert className="size-4" />
             ) : (
-              <div className="size-4"></div>
+              <Circle className="size-4" strokeWidth={1.5} />
             );
           const colorClass =
             status === "done"
@@ -69,8 +69,8 @@ export default function PlanRenderer({ plan }: PlanRendererProps) {
 
           return (
             <div key={i} className="pl-2 min-w-0">
-              <div className="flex items-start gap-2 py-0.5 min-w-0" style={{ paddingLeft: `${indent * 16}px` }}>
-                <span className={`shrink-0 size-4 mt-0.5 font-mono text-xs ${colorClass}`}>{label || " "}</span>
+              <div className="flex items-center gap-2 py-0.5 min-w-0" style={{ paddingLeft: `${indent * 16}px` }}>
+                <span className={`shrink-0 size-4 font-mono text-xs ${colorClass}`}>{label || " "}</span>
                 <span className="text-xs" dangerouslySetInnerHTML={{ __html: toInlineHtml(taskMatch[3].trim()) }} />
               </div>
             </div>
