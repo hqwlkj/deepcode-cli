@@ -274,11 +274,19 @@ export default function InputPrompt({
   const hasContent = useMemo(() => value.trim().length > 0 || attachments.length > 0, [value, attachments]);
 
   /**
-   * Extract search query from textarea value when in command mode (starts with "/")
+   * Check if the textarea value matches the command-mode trigger pattern:
+   * slash with optional leading whitespace, followed by non-space chars or end-of-string.
+   * Opens: "/", " /", "   /", "/code", "/anything"
+   * Closes: "/ " (slash+space)
+   */
+  const isCommandMode = useMemo(() => /^\s*\//.test(value) && !/^\s*\/\s/.test(value), [value]);
+
+  /**
+   * Extract search query from textarea value when in command mode.
    */
   const searchQuery = useMemo(() => {
-    if (value.startsWith("/")) {
-      return value.slice(1);
+    if (/^\s*\//.test(value)) {
+      return value.trim().slice(1);
     }
     return "";
   }, [value]);
@@ -288,27 +296,47 @@ export default function InputPrompt({
    * modal={false} means refocus won't trigger Radix dismiss.
    */
   useEffect(() => {
-    if (open && value.startsWith("/")) {
+    if (open && isCommandMode) {
       const raf = requestAnimationFrame(() => {
         textareaRef.current?.focus();
       });
       return () => cancelAnimationFrame(raf);
     }
-  }, [open, value]);
+  }, [open, isCommandMode]);
 
   /**
-   * Prevent Radix from closing the popover via outside interaction when in command mode.
-   * Direct setOpen(false) calls (from selecting skills, etc.) bypass this callback.
+   * Guard against blur/focus-related closes while in command mode.
+   * Genuine outside clicks are handled by the document-level pointerdown listener below.
    */
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen && value.startsWith("/")) {
-        return; // Don't allow automatic close while in "/" command mode
+      if (!nextOpen && isCommandMode) {
+        return;
       }
       setOpen(nextOpen);
     },
-    [value]
+    [isCommandMode]
   );
+
+  /**
+   * When SkillsPanel is open via command mode (/), close it on pointerdown
+   * outside the input area AND outside the popover content.
+   */
+  useEffect(() => {
+    if (!open || !isCommandMode) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      // Don't close if clicking inside the input area
+      if (fieldGroupRef.current?.contains(target)) return;
+      // Don't close if clicking inside the popover content (rendered in Portal)
+      if (target.closest('[data-slot="popover-content"]')) return;
+      setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open, isCommandMode]);
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
@@ -322,7 +350,7 @@ export default function InputPrompt({
                 value={value}
                 onChange={(e) => {
                   setValue(e.target.value);
-                  if (e.target.value.startsWith("/")) {
+                  if (/^\s*\//.test(e.target.value) && !/^\s*\/\s/.test(e.target.value)) {
                     setOpen(true);
                   } else {
                     setOpen(false);
@@ -351,7 +379,7 @@ export default function InputPrompt({
                   } else {
                     onSelectSkills([...selectedSkills, skill]);
                     // If in command mode, clear the "/" text and close popover
-                    if (value.startsWith("/")) {
+                    if (isCommandMode) {
                       setValue("");
                       setOpen(false);
                     }
@@ -363,9 +391,9 @@ export default function InputPrompt({
                   textareaRef?.current?.focus();
                 }}
               />
-              <Separator orientation="vertical" className="h-5 mt-1.5" />
+              <Separator orientation="vertical" className="h-4 mt-2" />
               <ContextIndicator tokenTelemetry={tokenTelemetry} />
-              {activeEditor && <Separator orientation="vertical" className="h-5 mt-1.5" />}
+              {activeEditor && <Separator orientation="vertical" className="h-4 mt-2" />}
               {activeEditor && (
                 <HoverCard openDelay={300} closeDelay={100}>
                   <HoverCardTrigger asChild>

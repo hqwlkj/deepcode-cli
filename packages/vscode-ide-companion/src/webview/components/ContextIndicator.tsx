@@ -23,9 +23,9 @@ export default function ContextIndicator({ tokenTelemetry }: ContextMeterProps) 
   const usedRows = flattenUsageFields(tokenTelemetry?.usage);
 
   return (
-    <HoverCard openDelay={10} closeDelay={100}>
+    <HoverCard openDelay={10} closeDelay={10}>
       <HoverCardTrigger asChild>
-        <InputGroupButton className="cursor-pointer flex items-center justify-center" size="icon-sm">
+        <InputGroupButton className="cursor-pointer flex items-center justify-center" size="icon-xs">
           <ProgressRing size={14} stroke={2} value={percent} />
         </InputGroupButton>
       </HoverCardTrigger>

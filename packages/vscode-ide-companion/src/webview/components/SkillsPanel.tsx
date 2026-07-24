@@ -58,7 +58,7 @@ export default function SkillsPanel({
       : commands;
   if (availableSkills.length === 0) {
     return (
-      <InputGroupButton disabled className="text-xs h-8 text-muted-foreground">
+      <InputGroupButton disabled size="xs" className="text-xs text-muted-foreground">
         <GraduationCap className="h-3 w-3" />
         <span>Skills</span>
       </InputGroupButton>
@@ -68,7 +68,7 @@ export default function SkillsPanel({
   return (
     <>
       <PopoverTrigger asChild>
-        <InputGroupButton className="text-xs h-8 text-muted-foreground cursor-pointer">
+        <InputGroupButton size="xs" className="text-xs text-muted-foreground cursor-pointer">
           <GraduationCap className="h-3 w-3" />
           <span>Skills</span>
         </InputGroupButton>
