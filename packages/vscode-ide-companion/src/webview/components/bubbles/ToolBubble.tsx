@@ -275,11 +275,11 @@ export default function ToolBubble({
             {paramsMd && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex-1 min-w-0 text-left text-xs text-muted-foreground cursor-pointer">
+                  <div className="max-w-56 min-w-0 text-left text-xs text-muted-foreground cursor-pointer">
                     <span className="text-wrap line-clamp-1">{paramsMd}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="text-wrap max-h-36 overflow-y-auto">
                   <p>{paramsMd}</p>
                 </TooltipContent>
               </Tooltip>

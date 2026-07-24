@@ -60,7 +60,7 @@ export default function Header({
               <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0 cursor-pointer"
+                className="shrink-0 cursor-pointer text-muted-foreground hover:text-primary"
                 onClick={() => onToggleSearchPanel(true)}
               >
                 <Search className="h-4 w-4" />
