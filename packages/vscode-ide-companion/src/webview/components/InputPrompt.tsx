@@ -11,7 +11,7 @@ import type {
   SkillInfo,
   TokenTelemetry,
 } from "@/webview/types";
-import { FileCodeIcon, Hand, Reply, Square, SquareChartGantt } from "lucide-react";
+import { BookmarkIcon, EyeOff, FileCodeIcon, Hand, Reply, Square, SquareChartGantt } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/webview/components/ui/input-group";
 import { Separator } from "@/webview/components/ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
@@ -33,6 +33,7 @@ import { toTitleCase } from "@/webview/utils";
 import { toast } from "@/webview/components/ui/sonner";
 import { Popover } from "./ui/popover";
 import { useSize } from "@/webview/hooks/useSize";
+import { Toggle } from "@/webview/components/ui/toggle";
 
 export interface InputPromptProps {
   loading: boolean;
@@ -395,25 +396,16 @@ export default function InputPrompt({
               <ContextIndicator tokenTelemetry={tokenTelemetry} />
               {activeEditor && <Separator orientation="vertical" className="h-4 mt-2" />}
               {activeEditor && (
-                <HoverCard openDelay={300} closeDelay={100}>
-                  <HoverCardTrigger asChild>
-                    <InputGroupButton
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-                      title={activeEditor.fileName}
-                    >
-                      <FileCodeIcon className="h-3 w-3" />
-                      <span className="max-w-20 truncate">{activeEditor.fileName.split("/").pop()}</span>
-                    </InputGroupButton>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="text-xs space-y-1">
-                    <div className="font-medium truncate">{activeEditor.fileName.split("/").pop()}</div>
-                    <p className="text-muted-foreground text-wrap break-all line-clamp-3">{activeEditor.fileName}</p>
-                    <div className="flex gap-3 text-muted-foreground">
-                      <span>{activeEditor.languageId}</span>
-                      <span>{activeEditor.lineCount} lines</span>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
+                <Toggle
+                  aria-label="Toggle bookmark"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 outline-0 border-none shadow-none rounded flex items-center justify-center"
+                >
+                  <FileCodeIcon className="size-3 group-data-[state=off]/toggle:hidden" />
+                  <EyeOff className="size-3 group-data-[state=on]/toggle:hidden" />
+                  <span className="max-w-20 text-xs truncate">{activeEditor.fileName.split("/").pop()}</span>
+                </Toggle>
               )}
               <div className="ml-auto flex gap-2 items-center">
                 <DropdownMenu>

@@ -101,6 +101,10 @@ vi.mock("@/webview/components/ui/popover", () => ({
   PopoverContent: vi.fn(({ children }) => <div data-testid="popover-content">{children}</div>),
 }));
 
+vi.mock("@/webview/components/ui/toggle", () => ({
+  Toggle: vi.fn(({ children }) => <button data-testid="toggle">{children}</button>),
+}));
+
 vi.mock("@/webview/components/ui/tooltip", () => ({
   Tooltip: vi.fn(({ children }) => <div data-testid="tooltip">{children}</div>),
   TooltipTrigger: vi.fn(({ children }) => <div data-testid="tooltip-trigger">{children}</div>),
@@ -143,6 +147,8 @@ vi.mock("lucide-react", () => ({
   ChevronDown: vi.fn(() => <span data-testid="chevron" />),
   Send: vi.fn(() => <span data-testid="send-icon" />),
   Reply: vi.fn(() => <span data-testid="reply-icon" />),
+  BookmarkIcon: vi.fn(() => <span data-testid="bookmark-icon" />),
+  EyeOff: vi.fn(() => <span data-testid="eye-off-icon" />),
   FileCodeIcon: vi.fn(() => <span data-testid="file-icon" />),
   Siren: vi.fn(() => <span data-testid="siren-icon" />),
   GraduationCap: vi.fn(() => <span data-testid="graduation-icon" />),
@@ -551,21 +557,21 @@ describe("InputPrompt", () => {
     });
   });
 
-  describe("Hover card", () => {
-    it("renders hover card when activeEditor is null", () => {
+  describe("Active editor", () => {
+    it("does not render editor indicator when activeEditor is null", () => {
       render(<InputPrompt {...defaultProps} />);
-      // HoverCard may or may not be rendered based on activeEditor
-      expect(screen.getByTestId("field-group")).toBeInTheDocument();
+      expect(screen.queryByTestId("toggle")).not.toBeInTheDocument();
     });
 
-    it("renders hover card when activeEditor is provided", () => {
+    it("renders editor toggle when activeEditor is provided", () => {
       render(
         <InputPrompt
           {...defaultProps}
           activeEditor={{ fileName: "test.ts", languageId: "typescript", lineCount: 100 }}
         />
       );
-      expect(screen.getByTestId("hover-card")).toBeInTheDocument();
+      expect(screen.getByTestId("toggle")).toBeInTheDocument();
+      expect(screen.getByText("test.ts")).toBeInTheDocument();
     });
   });
 
