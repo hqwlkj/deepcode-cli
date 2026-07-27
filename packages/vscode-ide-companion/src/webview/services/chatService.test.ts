@@ -329,7 +329,7 @@ describe("chatService", () => {
       const result = await chatService.showAlert("Test message");
 
       expect(result).toEqual({ ok: true });
-      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith("Test message");
+      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith({ message: "Test message", type: "info" });
     });
 
     it("passes any message string to wrpc", async () => {
@@ -337,7 +337,7 @@ describe("chatService", () => {
 
       await chatService.showAlert("New chat button clicked");
 
-      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith("New chat button clicked");
+      expect(wrpc.showAlert.mutate).toHaveBeenCalledWith({ message: "New chat button clicked", type: "info" });
     });
   });
 });

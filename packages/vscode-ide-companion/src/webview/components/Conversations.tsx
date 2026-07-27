@@ -66,7 +66,7 @@ function formatTime(dateString: string): string {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-export default function SessionList({
+export default function Conversations({
   sessions,
   activeSessionId,
   onSelect,

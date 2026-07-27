@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { SessionSummary } from "@/webview/types";
 import icon from "../../../assets/deepcoding_icon.png";
-import SessionList from "@/webview/components/SessionList";
+import Conversations from "@/webview/components/Conversations";
 import { Search } from "lucide-react";
 import { Button } from "@/webview/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/webview/components/ui/tooltip";
@@ -71,7 +71,7 @@ export default function Header({
             </TooltipContent>
           </Tooltip>
         )}
-        <SessionList
+        <Conversations
           sessions={sessions}
           activeSessionId={activeSessionId}
           onSelect={handleSelect}

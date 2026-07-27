@@ -122,9 +122,45 @@ export function usePromptAttachments(options?: {
     });
   }, []);
 
+  // Upload images from file picker (uses the same flow as paste)
+  const handleFileUpload = React.useCallback(
+    async (files: Array<{ name: string; mimeType: string; dataUrl: string }>) => {
+      if (!files || files.length === 0) return;
+
+      const currentCount = attachmentsRef.current.length;
+      const remaining = maxImageCount - currentCount;
+
+      if (remaining <= 0) {
+        onMaxExceeded?.();
+        return;
+      }
+
+      const filesToAdd = files.slice(0, remaining);
+      if (files.length > remaining) {
+        onMaxExceeded?.();
+      }
+
+      setAttachments((prev) => {
+        const newAttachments: Attachment[] = filesToAdd.map((file) => {
+          nextIdRef.current += 1;
+          return {
+            id: nextIdRef.current,
+            name: file.name,
+            mimeType: file.mimeType,
+            dataUrl: file.dataUrl,
+            label: ATTACHMENT_LABEL,
+          };
+        });
+        return [...prev, ...newAttachments];
+      });
+    },
+    [maxImageCount, onMaxExceeded]
+  );
+
   return {
     attachments,
     handlePaste,
+    handleFileUpload,
     removeAttachment,
     clearAttachments,
     getImageUrls,

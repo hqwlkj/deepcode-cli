@@ -44,7 +44,7 @@ export interface LlmStreamProgressData {
 export interface TokenTelemetry {
   model: string;
   thinkingEnabled: boolean;
-  reasoningEffort: string;
+  reasoningEffort: "high" | "max";
   activeTokens: number;
   compactPromptTokenThreshold: number;
   usage: unknown | null;
@@ -171,4 +171,5 @@ export type AppAction =
   | { type: "DISMISS_CONTINUE_PROMPT" }
   | { type: "SET_ACTIVE_SESSION_ID"; sessionId: string }
   | { type: "TOGGLE_SESSION_LIST"; open?: boolean }
-  | { type: "TOGGLE_SEARCH_PANEL"; open?: boolean };
+  | { type: "TOGGLE_SEARCH_PANEL"; open?: boolean }
+  | { type: "SET_TOKEN_TELEMETRY"; tokenTelemetry: TokenTelemetry };

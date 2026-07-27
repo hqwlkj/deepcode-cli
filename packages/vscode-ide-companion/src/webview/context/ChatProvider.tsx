@@ -44,6 +44,7 @@ interface ChatContextValue {
     continueGeneration: () => Promise<void>;
     toggleSessionList: (open?: boolean) => void;
     toggleSearchPanel: (open?: boolean) => void;
+    setTokenTelemetry: (tokenTelemetry: TokenTelemetry) => void;
   };
 }
 
@@ -183,6 +184,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, sessionListOpen: action.open !== undefined ? action.open : !state.sessionListOpen };
     case "TOGGLE_SEARCH_PANEL":
       return { ...state, searchPanelOpen: action.open !== undefined ? action.open : !state.searchPanelOpen };
+    case "SET_TOKEN_TELEMETRY":
+      return { ...state, tokenTelemetry: action.tokenTelemetry };
     default:
       return state;
   }
@@ -459,6 +462,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     dispatch({ type: "TOGGLE_SEARCH_PANEL", open });
   }, []);
 
+  const setTokenTelemetry = useCallback((tokenTelemetry: TokenTelemetry) => {
+    dispatch({ type: "SET_TOKEN_TELEMETRY", tokenTelemetry });
+  }, []);
+
   const contextValue: ChatContextValue = {
     state,
     dispatch,
@@ -476,6 +483,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       continueGeneration,
       toggleSessionList,
       toggleSearchPanel,
+      setTokenTelemetry,
     },
   };
 

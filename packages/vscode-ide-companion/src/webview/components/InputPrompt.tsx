@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import SkillsPanel from "@/webview/components/SkillsPanel";
+import Suggestion from "@/webview/components/Suggestion";
 import SkillsTags from "@/webview/components/SkillsTags";
 import ContextIndicator from "@/webview/components/ContextIndicator";
 import { PromptAttachments } from "@/webview/components/PromptAttachments";
@@ -11,10 +11,9 @@ import type {
   SkillInfo,
   TokenTelemetry,
 } from "@/webview/types";
-import { BookmarkIcon, EyeOff, FileCodeIcon, Hand, Reply, Square, SquareChartGantt } from "lucide-react";
+import { EyeOff, FileCodeIcon, Hand, Reply, Square, SquareChartGantt } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/webview/components/ui/input-group";
 import { Separator } from "@/webview/components/ui/separator";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { cn } from "@/webview/lib/utils";
 import { Field, FieldGroup } from "./ui/field";
 import { Spinner } from "@/webview/components/ui/spinner";
@@ -34,6 +33,7 @@ import { toast } from "@/webview/components/ui/sonner";
 import { Popover } from "./ui/popover";
 import { useSize } from "@/webview/hooks/useSize";
 import { Toggle } from "@/webview/components/ui/toggle";
+import Attachments from "@/webview/components/Attachments";
 
 export interface InputPromptProps {
   loading: boolean;
@@ -59,6 +59,7 @@ export interface InputPromptProps {
   onInterrupt: () => void;
   onSelectSkills: (skills: SkillInfo[]) => void;
   onClearEditingMessage: () => void;
+  onTokenTelemetryChange?: (tokenTelemetry: TokenTelemetry) => void;
 }
 
 export default function InputPrompt({
@@ -75,6 +76,7 @@ export default function InputPrompt({
   onInterrupt,
   onSelectSkills,
   onClearEditingMessage,
+  onTokenTelemetryChange,
 }: InputPromptProps) {
   const fieldGroupRef = useRef<HTMLDivElement>(null);
   const size = useSize(fieldGroupRef);
@@ -85,7 +87,7 @@ export default function InputPrompt({
   const [historyIdx, setHistoryIdx] = useState<number>(-1);
   const [draftBeforeHistory, setDraftBeforeHistory] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { attachments, handlePaste, removeAttachment, clearAttachments, getImageUrls, loadImages } =
+  const { attachments, handlePaste, handleFileUpload, removeAttachment, clearAttachments, getImageUrls, loadImages } =
     usePromptAttachments({
       onMaxExceeded: () => {
         toast.warning("You can paste up to 10 images at a time", { position: "bottom-right" });
@@ -320,7 +322,7 @@ export default function InputPrompt({
   );
 
   /**
-   * When SkillsPanel is open via command mode (/), close it on pointerdown
+   * When Suggestion is open via command mode (/), close it on pointerdown
    * outside the input area AND outside the popover content.
    */
   useEffect(() => {
@@ -367,12 +369,18 @@ export default function InputPrompt({
               />
             </div>
             <InputGroupAddon className="flex items-center justify-center" align="block-end">
-              <SkillsPanel
+              <Attachments onUploadImages={handleFileUpload} />
+              <Separator orientation="vertical" className="h-3.5 mt-2.5 bg-gray-300" />
+              <Suggestion
                 searchQuery={searchQuery}
                 size={size}
                 commands={commands}
                 availableSkills={availableSkills}
                 selectedSkills={selectedSkills}
+                currentModel={tokenTelemetry?.model}
+                thinkingEnabled={tokenTelemetry?.thinkingEnabled}
+                reasoningEffort={tokenTelemetry?.reasoningEffort}
+                onModelConfigChange={onTokenTelemetryChange}
                 onToggle={(skill) => {
                   const idx = selectedSkills.findIndex((s) => s.name === skill.name);
                   if (idx >= 0) {
@@ -392,9 +400,9 @@ export default function InputPrompt({
                   textareaRef?.current?.focus();
                 }}
               />
-              <Separator orientation="vertical" className="h-4 mt-2" />
+              <Separator orientation="vertical" className="h-3.5 mt-2.5 bg-gray-300" />
               <ContextIndicator tokenTelemetry={tokenTelemetry} />
-              {activeEditor && <Separator orientation="vertical" className="h-4 mt-2" />}
+              {activeEditor && <Separator orientation="vertical" className="h-3.5 mt-2.5 bg-gray-300" />}
               {activeEditor && (
                 <Toggle
                   aria-label={activeEditor.fileName}

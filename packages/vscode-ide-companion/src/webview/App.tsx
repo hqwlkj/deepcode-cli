@@ -102,6 +102,7 @@ export default function App() {
         onInterrupt={actions.interrupt}
         onSelectSkills={actions.setSelectedSkills}
         onClearEditingMessage={() => actions.editMessage(null)}
+        onTokenTelemetryChange={actions.setTokenTelemetry}
       />
     </div>
   );

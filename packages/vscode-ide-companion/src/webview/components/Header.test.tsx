@@ -5,7 +5,7 @@
  * - Displaying session summary
  * - "New Conversation" when no active session
  * - Search button visibility conditions
- * - Rendering SessionList
+ * - Rendering Conversations
  * - Delegating callbacks
  */
 
@@ -20,7 +20,7 @@ vi.mock("../../../assets/deepcoding_icon.png", () => ({
   default: "data:image/png;base64,mockicon",
 }));
 
-vi.mock("./SessionList", () => ({
+vi.mock("./Conversations", () => ({
   default: vi.fn(
     ({
       sessions,
@@ -140,30 +140,30 @@ describe("Header", () => {
     }
   });
 
-  it("renders SessionList component", () => {
+  it("renders Conversations component", () => {
     render(<Header {...defaultProps} />);
     expect(screen.getByTestId("session-list")).toBeInTheDocument();
   });
 
-  it("passes sessions to SessionList", () => {
+  it("passes sessions to Conversations", () => {
     render(<Header {...defaultProps} sessions={sessions} />);
     const sessionList = screen.getByTestId("session-list");
     expect(sessionList.getAttribute("data-count")).toBe("2");
   });
 
-  it("passes open state to SessionList", () => {
+  it("passes open state to Conversations", () => {
     render(<Header {...defaultProps} sessionListOpen={true} />);
     const sessionList = screen.getByTestId("session-list");
     expect(sessionList.getAttribute("data-open")).toBe("true");
   });
 
-  it("calls onSelectSession when SessionList selects a session", () => {
+  it("calls onSelectSession when Conversations selects a session", () => {
     render(<Header {...defaultProps} />);
     fireEvent.click(screen.getByTestId("session-list-select"));
     expect(defaultProps.onSelectSession).toHaveBeenCalledWith("session-1");
   });
 
-  it("calls onToggleSessionList when SessionList toggles", () => {
+  it("calls onToggleSessionList when Conversations toggles", () => {
     render(<Header {...defaultProps} />);
     fireEvent.click(screen.getByTestId("session-list-toggle"));
     expect(defaultProps.onToggleSessionList).toHaveBeenCalled();

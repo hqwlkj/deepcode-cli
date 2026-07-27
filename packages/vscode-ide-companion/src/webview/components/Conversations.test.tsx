@@ -1,5 +1,5 @@
 /**
- * Unit tests for SessionList component
+ * Unit tests for Conversations component
  *
  * Tests cover:
  * - Search functionality
@@ -10,7 +10,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import SessionList from "./SessionList";
+import Conversations from "./Conversations";
 import type { SessionSummary } from "@/webview/types";
 
 // Mock dependencies
@@ -118,7 +118,7 @@ vi.mock("@/webview/services/chatService", () => ({
   },
 }));
 
-describe("SessionList", () => {
+describe("Conversations", () => {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -156,23 +156,23 @@ describe("SessionList", () => {
   });
 
   it("renders search input", () => {
-    render(<SessionList {...defaultProps} />);
+    render(<Conversations {...defaultProps} />);
     expect(screen.getByTestId("search-input")).toBeInTheDocument();
   });
 
   it("renders drawer", () => {
-    render(<SessionList {...defaultProps} />);
+    render(<Conversations {...defaultProps} />);
     expect(screen.getByTestId("drawer")).toBeInTheDocument();
   });
 
   it("shows empty state when no sessions", () => {
-    render(<SessionList {...defaultProps} sessions={[]} />);
+    render(<Conversations {...defaultProps} sessions={[]} />);
     expect(screen.getByTestId("empty")).toBeInTheDocument();
     expect(screen.getByText("No sessions yet")).toBeInTheDocument();
   });
 
   it("shows 'No sessions found' when search yields no results", () => {
-    render(<SessionList {...defaultProps} />);
+    render(<Conversations {...defaultProps} />);
 
     const searchInput = screen.getByTestId("search-input");
     fireEvent.change(searchInput, { target: { value: "nonexistent" } });
@@ -198,7 +198,7 @@ describe("SessionList", () => {
       },
     ];
 
-    render(<SessionList {...defaultProps} sessions={sessionsWithNames} />);
+    render(<Conversations {...defaultProps} sessions={sessionsWithNames} />);
 
     const searchInput = screen.getByTestId("search-input");
     fireEvent.change(searchInput, { target: { value: "Alpha" } });
@@ -218,7 +218,7 @@ describe("SessionList", () => {
       },
     ];
 
-    render(<SessionList {...defaultProps} sessions={sessionsWithNames} />);
+    render(<Conversations {...defaultProps} sessions={sessionsWithNames} />);
 
     const searchInput = screen.getByTestId("search-input");
     fireEvent.change(searchInput, { target: { value: "alpha" } });
@@ -231,7 +231,7 @@ describe("SessionList", () => {
       { id: "1", summary: "", createTime: today.toISOString(), updateTime: today.toISOString(), status: "idle" },
     ];
 
-    render(<SessionList {...defaultProps} sessions={sessionsWithEmptySummary} />);
+    render(<Conversations {...defaultProps} sessions={sessionsWithEmptySummary} />);
 
     // Should display "Untitled" instead of empty string
     expect(screen.getByText("Untitled")).toBeInTheDocument();

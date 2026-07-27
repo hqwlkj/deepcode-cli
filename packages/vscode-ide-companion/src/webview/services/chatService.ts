@@ -163,8 +163,8 @@ export const chatService = {
     return result as { ok: boolean };
   },
 
-  async showAlert(message: string): Promise<{ ok: boolean }> {
-    const result = await wrpc.showAlert.mutate(message);
+  async showAlert(message: string, type: "info" | "warning" | "error" = "info"): Promise<{ ok: boolean }> {
+    const result = await wrpc.showAlert.mutate({ message, type });
     return result as { ok: boolean };
   },
 
@@ -223,5 +223,27 @@ export const chatService = {
   async openExternal(url: string): Promise<{ ok: boolean }> {
     const result = await wrpc.openExternal.mutate({ url });
     return result as { ok: boolean };
+  },
+
+  /**
+   * Update model configuration (model, thinking, reasoning effort).
+   * Persists to project-level settings if they exist, otherwise user-level.
+   */
+  async updateModelConfig(config: {
+    model: string;
+    thinkingEnabled: boolean;
+    reasoningEffort: "high" | "max";
+  }): Promise<{ ok: boolean; changed: boolean; tokenTelemetry: TokenTelemetry }> {
+    const result = await wrpc.updateModelConfig.mutate(config);
+    return result as { ok: boolean; changed: boolean; tokenTelemetry: TokenTelemetry };
+  },
+
+  /**
+   * Open the system file picker filtered for images, read selected files
+   * as base64, and return them as data URLs.
+   */
+  async pickImageFiles(): Promise<{ files: Array<{ name: string; mimeType: string; dataUrl: string }> }> {
+    const result = await wrpc.pickImageFiles.query();
+    return result as { files: Array<{ name: string; mimeType: string; dataUrl: string }> };
   },
 };

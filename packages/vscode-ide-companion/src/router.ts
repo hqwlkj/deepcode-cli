@@ -1,9 +1,10 @@
+import * as fs from "node:fs";
 import { initWRPC } from "@webview-rpc/host";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as vscodeApi from "vscode";
 import z from "zod";
-import { getProjectCode } from "@vegamo/deepcode-core";
+import { getProjectCode, writeModelConfigSelection } from "@vegamo/deepcode-core";
 import type {
   SessionManager,
   SkillInfo,
@@ -276,11 +277,30 @@ export const appRouter = router({
     await ctx.openSettings();
     return { ok: true };
   }),
-  showAlert: procedure.input(z.string()).resolve(({ input }) => {
-    console.log("[Extension] Received message:", input);
-    vscodeApi.window.showInformationMessage(input);
-    return { ok: true };
-  }),
+  showAlert: procedure
+    .input(
+      z.object({
+        message: z.string(),
+        type: z.enum(["info", "warning", "error"]).optional(),
+      })
+    )
+    .resolve(({ input }) => {
+      console.log("[Extension] Received message:", input);
+      switch (input.type) {
+        case "info":
+          vscodeApi.window.showInformationMessage(input.message);
+          break;
+        case "warning":
+          vscodeApi.window.showWarningMessage(input.message);
+          break;
+        case "error":
+          vscodeApi.window.showErrorMessage(input.message);
+          break;
+        default:
+          vscodeApi.window.showInformationMessage(input.message);
+      }
+      return { ok: true };
+    }),
 
   addSystemMessage: procedure
     .input(
@@ -369,6 +389,77 @@ export const appRouter = router({
   getFileContent: procedure.input(z.object({ filePath: z.string() })).resolve(({ ctx, input }) => {
     const content = ctx.getFileContent(input.filePath);
     return { content };
+  }),
+
+  updateModelConfig: procedure
+    .input(
+      z.object({
+        model: z.string(),
+        thinkingEnabled: z.boolean(),
+        reasoningEffort: z.enum(["high", "max"]),
+      })
+    )
+    .resolve(({ ctx, input }) => {
+      const result = writeModelConfigSelection(
+        { model: input.model, thinkingEnabled: input.thinkingEnabled, reasoningEffort: input.reasoningEffort },
+        undefined,
+        ctx.getWorkspaceRoot()
+      );
+      // Build fresh token telemetry so the webview can update its display
+      const activeSessionId = ctx.sessionManager.getActiveSessionId();
+      const activeSession = activeSessionId ? ctx.sessionManager.getSession(activeSessionId) : null;
+      const tokenTelemetry = ctx.buildTokenTelemetry(activeSession);
+      return { ok: true, changed: result.changed, tokenTelemetry };
+    }),
+
+  pickImageFiles: procedure.resolve(async () => {
+    const IMAGE_FILTERS: Record<string, string[]> = {
+      Images: ["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg", "ico"],
+    };
+
+    const uris = await vscodeApi.window.showOpenDialog({
+      canSelectMany: true,
+      filters: IMAGE_FILTERS,
+      openLabel: "Attach Images",
+      title: "Select images to attach",
+    });
+
+    if (!uris || uris.length === 0) {
+      return { files: [] };
+    }
+
+    const files: Array<{ name: string; mimeType: string; dataUrl: string }> = [];
+
+    for (const uri of uris) {
+      try {
+        const filePath = uri.fsPath;
+        const buffer = fs.readFileSync(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        const mimeMap: Record<string, string> = {
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".jpeg": "image/jpeg",
+          ".gif": "image/gif",
+          ".bmp": "image/bmp",
+          ".webp": "image/webp",
+          ".svg": "image/svg+xml",
+          ".ico": "image/x-icon",
+        };
+        const mimeType = mimeMap[ext] || "image/png";
+        const base64 = buffer.toString("base64");
+        const dataUrl = `data:${mimeType};base64,${base64}`;
+        files.push({
+          name: path.basename(filePath),
+          mimeType,
+          dataUrl,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        void vscodeApi.window.showErrorMessage(`Failed to read image: ${message}`);
+      }
+    }
+
+    return { files };
   }),
 });
 

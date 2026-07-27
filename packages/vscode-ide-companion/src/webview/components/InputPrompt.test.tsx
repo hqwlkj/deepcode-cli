@@ -15,7 +15,7 @@ import InputPrompt, { type InputPromptProps } from "./InputPrompt";
 import type { SessionMessage, SkillInfo } from "@/webview/types";
 
 // Mock dependencies
-vi.mock("@/webview/components/SkillsPanel", () => ({
+vi.mock("@/webview/components/Suggestion", () => ({
   default: vi.fn(({ children }) => <div data-testid="skills-panel">{children}</div>),
 }));
 
@@ -130,10 +130,17 @@ vi.mock("@/webview/components/PromptAttachments", () => ({
   usePromptAttachments: vi.fn(() => ({
     attachments: [],
     handlePaste: vi.fn(),
+    handleFileUpload: vi.fn(),
     removeAttachment: vi.fn(),
     clearAttachments: vi.fn(),
     getImageUrls: vi.fn(() => []),
   })),
+}));
+
+vi.mock("@/webview/services/chatService", () => ({
+  chatService: {
+    pickImageFiles: vi.fn().mockResolvedValue({ files: [] }),
+  },
 }));
 
 vi.mock("@/webview/lib/utils", () => ({
@@ -161,6 +168,9 @@ vi.mock("lucide-react", () => ({
   Info: vi.fn(() => <span data-testid="info-icon" />),
   Hand: vi.fn(() => <span data-testid="hand-icon" />),
   SquareChartGantt: vi.fn(() => <span data-testid="gantt-icon" />),
+  Plus: vi.fn(() => <span data-testid="plus-icon" />),
+  FileText: vi.fn(() => <span data-testid="file-text-icon" />),
+  ImageUp: vi.fn(() => <span data-testid="image-up-icon" />),
 }));
 
 const mockOnSendPrompt =
