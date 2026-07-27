@@ -50,7 +50,6 @@ function getRoleLabel(role: string) {
 }
 
 const SearchDialog = memo(function SearchDialog({ open, onOpenChange, messages, onSelectMessage }: SearchDialogProps) {
-  console.log("messages:", messages);
   // Build a flat list of searchable items with their message IDs.
   // Only recompute when messages reference changes (shallow compare via React.memo).
   const searchableItems = useMemo(

@@ -165,7 +165,21 @@ export const appRouter = router({
 
     // Show user message in webview (skip for /continue commands)
     if (displayPrompt && !isPermissionContinue && !isPlainContinue) {
-      ctx.postMessage({ type: "userMessage", content: displayPrompt });
+      ctx.postMessage({
+        type: "userMessage",
+        content: displayPrompt,
+        meta: {
+          userPrompt: {
+            text: prompt,
+            skills: skills.length > 0 ? (skills as SkillInfo[]) : undefined,
+            imageUrls: normalizedImages.length > 0 ? normalizedImages : undefined,
+            permissions: permissions && permissions.length > 0 ? (permissions as UserToolPermission[]) : undefined,
+            alwaysAllows: alwaysAllows && alwaysAllows.length > 0 ? (alwaysAllows as PermissionScope[]) : undefined,
+            planMode,
+            askUserQuestionSummary,
+          },
+        },
+      });
     }
 
     ctx.postMessage({ type: "loading", value: true });

@@ -1,7 +1,7 @@
 import { Check, Copy, PenLine } from "lucide-react";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import Markdown from "@/webview/components/markdown";
 import { Card } from "@/webview/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/webview/components/ui/hover-card";
@@ -13,7 +13,7 @@ interface UserBubbleProps {
   onEdit?: () => void;
 }
 
-export default function UserBubble({ content, meta, onEdit }: UserBubbleProps) {
+const UserBubble = ({ content, meta, onEdit }: UserBubbleProps) => {
   const [copied, setCopied] = useState(false);
 
   const images = useMemo(() => {
@@ -33,6 +33,7 @@ export default function UserBubble({ content, meta, onEdit }: UserBubbleProps) {
   const handleEdit = useCallback(() => {
     onEdit?.();
   }, [onEdit]);
+
   return (
     <div className="group flex flex-col items-end justify-end mb-3">
       {(images || []).length > 0 && (
@@ -90,4 +91,6 @@ export default function UserBubble({ content, meta, onEdit }: UserBubbleProps) {
       </div>
     </div>
   );
-}
+};
+
+export default memo(UserBubble);

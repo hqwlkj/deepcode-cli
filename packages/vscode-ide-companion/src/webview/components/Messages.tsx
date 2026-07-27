@@ -8,7 +8,7 @@ import ToolBubble, {
   type AskUserQuestionMetadata,
 } from "@/webview/components/bubbles/ToolBubble";
 import SystemBubble from "@/webview/components/bubbles/SystemBubble";
-import type { EditingMessage, SessionMessage } from "@/webview/types";
+import type { EditingMessage, SessionMessage, SkillInfo } from "@/webview/types";
 import AskQuestionSummary from "@/webview/components/AskQuestionSummary";
 import icon from "../../../assets/deepcoding_icon.png";
 
@@ -187,11 +187,13 @@ const Messages = forwardRef<MessagesHandle, MessagesProps>(
                     onEdit={
                       onEditMessage
                         ? () => {
-                            const meta = msg.meta as { userPrompt?: { imageUrls?: string[] } } | undefined;
+                            const meta = msg.meta as
+                              | { userPrompt?: { imageUrls?: string[]; skills?: SkillInfo[] } }
+                              | undefined;
                             onEditMessage({
                               text: msg.content,
                               images: meta?.userPrompt?.imageUrls ?? [],
-                              skills: [],
+                              skills: meta?.userPrompt?.skills ?? [],
                             });
                           }
                         : undefined
