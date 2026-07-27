@@ -47,7 +47,7 @@
   --input-bg: var(--vscode-input-background, #ffffff);
   --ring: #4d6bfe;;
   --chart-1: var(--vscode-charts-blue, #0066cc);
-  --chart-2: var(--vscode-charts-orange, #cc6600);
+  --chart-2: var(--vscode-charts-yellow, #cc6600);
   --chart-3: var(--vscode-charts-green, #22863a);
   --chart-4: var(--vscode-charts-purple, #6f42c1);
   --chart-5: var(--vscode-charts-red, #d32f2f);
@@ -132,7 +132,7 @@
   --input: var(--vscode-input-background, #3c3c3c);
   --ring: #4d6bfe;;
   --chart-1: var(--vscode-charts-blue, #75baff);
-  --chart-2: var(--vscode-charts-orange, #d18616);
+  --chart-2: var(--vscode-charts-yellow, #d18616);
   --chart-3: var(--vscode-charts-green, #89d185);
   --chart-4: var(--vscode-charts-purple, #c586c0);
   --chart-5: var(--vscode-charts-red, #f48771);
@@ -150,9 +150,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-card text-foreground;
   }
+
   html {
     @apply font-sans;
   }
@@ -161,30 +163,35 @@
 .chat-progress-shimmer-text {
   background: linear-gradient(90deg,
   var(--vscode-descriptionForeground) 0%,
-  var(--vscode-descriptionForeground) 30%,
+  var(--vscode-disabledForeground) 30%,
   var(--vscode-chat-thinkingShimmer) 50%,
-  var(--vscode-descriptionForeground) 70%,
+  var(--vscode-disabledForeground) 70%,
   var(--vscode-descriptionForeground) 100%);
   background-size: 400% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: chat-thinking-shimmer 2s linear infinite;
+  animation: chat-thinking-shimmer 5s linear infinite;
   will-change: background-position;
 }
-@keyframes chat-thinking-shimmer {
-   0% {
-     background-position: 120% 0;
-   }
 
-   100% {
-     background-position: -120% 0;
-   }
- }
+@keyframes chat-thinking-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
 
 @keyframes msg-highlight-breathe {
-  0%, 100% { background-color: transparent; }
-  50% { background-color: rgba(77, 107, 254, 0.12); }
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(77, 107, 254, 0.12);
+  }
 }
 
 .msg-highlight-breathe {

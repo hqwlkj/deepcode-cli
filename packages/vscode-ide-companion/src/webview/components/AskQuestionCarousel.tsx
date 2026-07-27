@@ -150,11 +150,11 @@ const AskQuestionCarousel: React.FC<AskQuestionCarouselProps> = ({ questions, on
           <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger asChild>
               <div className="group flex justify-between items-center cursor-pointer px-2 w-full">
-                <span className="text-primary truncate">{questions[0]?.question || `Question ${current}`}</span>
+                <span className="text-primary truncate py-2">{questions[0]?.question || `Question ${current}`}</span>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       onClose?.();
@@ -290,7 +290,7 @@ const AskQuestionCarousel: React.FC<AskQuestionCarouselProps> = ({ questions, on
             </span>
           </div>
           <div className="pr-2">
-            <Button type="submit" size="sm" className="text-xs" disabled={allEmpty}>
+            <Button type="submit" size="xs" className="text-xs" disabled={allEmpty}>
               Submit
             </Button>
           </div>

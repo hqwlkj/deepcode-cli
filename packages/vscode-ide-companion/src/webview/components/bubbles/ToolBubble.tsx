@@ -217,7 +217,12 @@ function renderToolContent(toolData: ToolData, resultMd: string, content: string
 
   // Default: render output or raw content
   return (
-    <pre className="text-xs text-chart-2 whitespace-pre-wrap wrap-break-word p-2">{resultMd || output || content}</pre>
+    <pre
+      className="w-full text-xs text-chart-2 text-wrap break-all
+ whitespace-pre-wrap wrap-break-word p-2"
+    >
+      {resultMd || output || content}
+    </pre>
   );
 }
 
@@ -288,7 +293,7 @@ export default function ToolBubble({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="w-auto data-[state=open]:bg-muted data-[state=open]:rounded-t-none data-[state=open]:rounded-b-sm">
-          <div className="text-sm">{renderToolContent(toolData, resultMd, content)}</div>
+          {renderToolContent(toolData, resultMd, content)}
         </CollapsibleContent>
       </div>
     </Collapsible>
