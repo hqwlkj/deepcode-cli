@@ -194,7 +194,7 @@ const defaultProps: InputPromptProps = {
   tokenTelemetry: {
     model: "test",
     thinkingEnabled: false,
-    reasoningEffort: "low",
+    reasoningEffort: "high" as const,
     activeTokens: 0,
     compactPromptTokenThreshold: 100000,
     usage: null,

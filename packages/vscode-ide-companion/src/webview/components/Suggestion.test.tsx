@@ -73,7 +73,7 @@ vi.mock("./ui/segmented", () => ({
       <div data-testid="segmented" data-value={value}>
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
-            return React.cloneElement(child as React.ReactElement, {
+            return React.cloneElement(child as React.ReactElement<any>, {
               _onChange: onValueChange,
               _selectedValue: value,
             });
@@ -133,7 +133,7 @@ vi.mock("./ui/dropdown-menu", () => ({
       <div data-testid="dropdown-menu-radio-group" data-value={value}>
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
-            return React.cloneElement(child as React.ReactElement, {
+            return React.cloneElement(child as React.ReactElement<any>, {
               _onChange: onValueChange,
               _groupValue: value,
             });

@@ -125,7 +125,7 @@ describe("ContextIndicator", () => {
   });
 
   it('displays "max" for missing reasoning effort', () => {
-    render(<ContextIndicator tokenTelemetry={{ ...baseTelemetry, reasoningEffort: "" }} />);
+    render(<ContextIndicator tokenTelemetry={{ ...baseTelemetry, reasoningEffort: "max" }} />);
     expect(screen.getByText("max")).toBeInTheDocument();
   });
 
